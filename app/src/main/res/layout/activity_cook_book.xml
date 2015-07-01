@@ -23,9 +23,8 @@
             android:layout_weight="1"
             android:singleLine="true"
             android:editable="true"
-            android:focusable="true"
             android:enabled="true"
-            android:clickable="true" />
+            android:clickable="true"/>
 
         <Button
             android:layout_width="wrap_content"
@@ -35,11 +34,10 @@
 
     </LinearLayout>
 
-    <TextView
+    <ListView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="New Text"
-        android:id="@+id/textView3"
-        android:layout_gravity="center_horizontal" />
+        android:id="@+id/listView"
+        android:footerDividersEnabled="true" />
 
 </LinearLayout>
