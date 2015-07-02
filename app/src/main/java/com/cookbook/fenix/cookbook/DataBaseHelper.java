@@ -19,9 +19,10 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.LinkedList;
 
-/**
+/**DON'T USED YET IN PROJECT
+ *
  * File used for handle SQLite database
- * <p/>
+ *
  * Created by fenix on 01.07.2015.
  */
 public class DataBaseHelper extends SQLiteOpenHelper {

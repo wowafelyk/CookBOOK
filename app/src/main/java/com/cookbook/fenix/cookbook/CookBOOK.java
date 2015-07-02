@@ -5,18 +5,15 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.text.Editable;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,7 +43,6 @@ public class CookBOOK extends ActionBarActivity {
     private int column;
     private String query;
     private Integer page;
-
 
 
     @Override
@@ -81,14 +77,9 @@ public class CookBOOK extends ActionBarActivity {
                         sort = prefs.getBoolean("TOP Rated", true);
                         String s = sort ? "r" : "t";
                         search(edit.toString(), s, page.toString());
-
-
                     }
                 }
-
         );
-
-
     }
 
 
@@ -171,16 +162,5 @@ public class CookBOOK extends ActionBarActivity {
         new RestAPI(this, getSupportFragmentManager()).execute(SERVER_GET_URL, data);
     }
 
-   /* public int getLayout() {
-
-        int layoutResourceId;
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if (prefs.getBoolean(getResources().getString(R.string.ListOutput), true)) {
-            layoutResourceId = R.layout.activity_cook_book;
-        } else {
-            layoutResourceId = R.layout.grid_activity_cook_book;
-        }
-        return layoutResourceId;
-    }*/
 
 }

@@ -97,6 +97,7 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
                 // Append server response in string
                 sb.append(line + "");
             }
+            //Start Parsing JSON OBJECT
             Log.d(TEST, "2");
             jsonResponse = new JSONObject(sb.toString());
             Log.d(TEST, "3");
@@ -159,7 +160,6 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
 
 
         if (obj.has(INGREDIENTS)) {
-            //JSONObject obj=obj.optJSONObject("recipe");
             String[] s = new String[30];
             JSONArray arr = obj.optJSONArray(INGREDIENTS);
             for (int i = 0; i < arr.length(); i++) {
