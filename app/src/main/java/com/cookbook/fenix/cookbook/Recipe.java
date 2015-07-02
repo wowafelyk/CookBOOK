@@ -5,6 +5,8 @@ import android.graphics.Bitmap;
 import java.io.Serializable;
 
 /**
+ * Object for saving data
+ *
  * Created by fenix on 01.07.2015.
  */
 public class Recipe implements Serializable {
@@ -14,16 +16,8 @@ public class Recipe implements Serializable {
     private String publisher;
     private String[] ingredients;
     private String imgURL;
-
-    public Bitmap getBmp() {
-        return bmp;
-    }
-
-    public void setBmp(Bitmap bmp) {
-        this.bmp = bmp;
-    }
-
     private Bitmap bmp;
+
 
     public Recipe() {
     }
@@ -36,6 +30,14 @@ public class Recipe implements Serializable {
         this.publisher = publisher;
         this.ingredients = ingredients;
         this.imgURL = imgURL;
+    }
+
+    public Bitmap getBmp() {
+        return bmp;
+    }
+
+    public void setBmp(Bitmap bmp) {
+        this.bmp = bmp;
     }
 
     public String getTitle() {

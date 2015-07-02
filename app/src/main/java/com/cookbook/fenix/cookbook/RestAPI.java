@@ -3,6 +3,8 @@ package com.cookbook.fenix.cookbook;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
@@ -55,10 +57,16 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
 
         BufferedReader reader = null;
         JSONObject jsonResponse;
-        Recipe[] recipeArray= new Recipe[30];
+        Recipe[] recipeArray = new Recipe[30];
 
         // Send data
         try {
+            activity.runOnUiThread(new Runnable() {
+                public void run() {
+                    Toast.makeText(activity.getApplicationContext(), " Загрузка даних зачекайте", Toast.LENGTH_SHORT).show();
+                }
+            });
+
             // Defined URL  where to send data
             URL url = new URL(params[0]);
             Log.d(TEST, "1");
@@ -83,11 +91,11 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
             }
 
             jsonResponse = new JSONObject(sb.toString());
-            if(jsonResponse.has(ARRAY_NAME)){
+            if (jsonResponse.has(ARRAY_NAME)) {
                 recipeArray = parseJSONArray(jsonResponse);
             } else {
                 recipeArray[0] = parseJSONObject(jsonResponse);
-                recipeArray[1]=null;
+                recipeArray[1] = null;
             }
 
 
@@ -115,11 +123,11 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
         //TextView text = (TextView) activity.findViewById(R.id.textView2);
         //text.setText(result.toString());
 
-        ListView listView = (ListView)activity.findViewById(R.id.listView);
+        ListView listView = (ListView) activity.findViewById(R.id.listView);
         RecipeAdapter list;
 
-        if(result[1]!=null){
-            list = new RecipeAdapter(activity,R.layout.item_layout,result);
+        if (result[1] != null) {
+            list = new RecipeAdapter(activity,R.layout.activity_cook_book,result);
             listView.setAdapter(list);
         } else {
             Recipe r = result[0];
@@ -128,34 +136,46 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
     }
 
 
-
-    private Recipe parseJSONObject(JSONObject obj){
+    private Recipe parseJSONObject(JSONObject obj) {
         Recipe result = new Recipe(
-                obj.optString(TITLE),obj.optString(RECIPE_ID), obj.optString(SOCIAL_RANK),
-                obj.optString(PUBLISHER),obj.optString(IMG_URL));
-        Log.d(TEST,  result.getPublisher());
-        Log.d(TEST,  " parseJSONObject");
+                obj.optString(TITLE), obj.optString(RECIPE_ID), obj.optString(SOCIAL_RANK),
+                obj.optString(PUBLISHER), obj.optString(IMG_URL));
+
+        try {
+            URL url = new URL(result.getImgURL());
+            Bitmap bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+            result.setBmp(bmp);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Log.d(TEST, result.getPublisher());
+        Log.d(TEST, " parseJSONObject");
 
         return result;
     }
 
-    private Recipe[] parseJSONArray(JSONObject obj){
-        Recipe[] recipes=new Recipe[30];
+    private Recipe[] parseJSONArray(JSONObject obj) {
+        Recipe[] recipes = new Recipe[30];
         try {
+            activity.runOnUiThread(new Runnable() {
+                public void run() {
+                    Toast.makeText(activity.getApplicationContext(), " Загрузка фото/відео даних", Toast.LENGTH_SHORT).show();
+                }
+            });
             JSONArray jsonArray = obj.getJSONArray(ARRAY_NAME);
-
-            for (int i=0; i<Integer.parseInt(obj.getString("count"));i++){
-                recipes[i]=parseJSONObject(jsonArray.getJSONObject(i));
+            for (int i = 0; i < Integer.parseInt(obj.getString("count")); i++) {
+                recipes[i] = parseJSONObject(jsonArray.getJSONObject(i));
             }
 
 
-
         } catch (JSONException e) {
-            Log.d(TEST,  " Catch parseJSON");
+            Log.d(TEST, " Catch parseJSON");
             e.printStackTrace();
         }
 
-        Log.d(TEST,  ((Recipe)(recipes[1])).getPublisher());
+        Log.d(TEST, ((Recipe) (recipes[1])).getPublisher());
 
         return recipes;
     }

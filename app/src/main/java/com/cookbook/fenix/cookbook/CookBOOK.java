@@ -42,7 +42,7 @@ public class CookBOOK extends ActionBarActivity {
         setContentView(R.layout.activity_cook_book);
         LinearLayout root = (LinearLayout) findViewById(R.id.root);
         Button buttonSerch = (Button) findViewById(R.id.buttonserch);
-        listView = (ListView)findViewById(R.id.listView);
+        listView = (ListView) findViewById(R.id.listView);
         buttonSerch.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -54,22 +54,22 @@ public class CookBOOK extends ActionBarActivity {
     }
 
     @Override
-    protected void onRestoreInstanceState(Bundle savedInstanseState){
+    protected void onRestoreInstanceState(Bundle savedInstanseState) {
         super.onRestoreInstanceState(savedInstanseState);
-        ArrayList<Recipe> arrayList = (ArrayList)savedInstanseState.getSerializable(BUNDLE_RECIPE_ARRAY);
-        for(int i=0;i<30;i++){
-            recipeArray[i]=arrayList.get(i);
+        ArrayList<Recipe> arrayList = (ArrayList) savedInstanseState.getSerializable(BUNDLE_RECIPE_ARRAY);
+        for (int i = 0; i < 30; i++) {
+            recipeArray[i] = arrayList.get(i);
         }
 
         RecipeAdapter list;
-            list = new RecipeAdapter(this,R.layout.item_layout,recipeArray);
-            listView.setAdapter(list);
+        list = new RecipeAdapter(this, R.layout.activity_cook_book, recipeArray);
+        listView.setAdapter(list);
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState){
+    protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        recipeArray = ((RecipeAdapter)listView.getAdapter()).getData();
+        recipeArray = ((RecipeAdapter) listView.getAdapter()).getData();
         outState.putSerializable(BUNDLE_RECIPE_ARRAY, (new ArrayList<>(Arrays.asList(recipeArray))));
     }
 
@@ -90,6 +90,8 @@ public class CookBOOK extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            //SettingsFragment sf = new SettingsFragment();
+            //sf.show(getSupportFragmentManager(), "MySF");
             return true;
         }
 
@@ -115,5 +117,17 @@ public class CookBOOK extends ActionBarActivity {
 
         new RestAPI(this).execute(SERVER_GET_URL, data);
     }
+
+   /* public int getLayout() {
+
+        int layoutResourceId;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (prefs.getBoolean(getResources().getString(R.string.ListOutput), true)) {
+            layoutResourceId = R.layout.activity_cook_book;
+        } else {
+            layoutResourceId = R.layout.grid_activity_cook_book;
+        }
+        return layoutResourceId;
+    }*/
 
 }

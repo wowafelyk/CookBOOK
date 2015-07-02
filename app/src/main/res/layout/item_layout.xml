@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:weightSum="1"
     android:id="@+id/element_item"
-    android:background="#ffbee1ff">
+    android:background="#ffdbebff">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -20,20 +20,18 @@
             android:id="@+id/textView"
             android:gravity="center_horizontal"
             android:layout_weight="1"
-            android:textSize="18sp"
-            android:layout_margin="@dimen/Margin_5dp" />
+            android:textSize="22sp"
+            android:layout_margin="@dimen/Margin_5dp"
+            android:textColor="#ff210095" />
 
     </LinearLayout>
 
     <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:id="@+id/imageView"
         android:layout_margin="@dimen/Margin_5dp"
-        android:layout_gravity="center_horizontal|top"
-        android:maxWidth="250dp"
         android:minHeight="250dp"
-        android:maxHeight="350dp"
         android:minWidth="250dp" />
 
     <TextView
@@ -43,6 +41,8 @@
         android:id="@+id/textView2"
         android:layout_weight="1"
         android:gravity="center_horizontal"
-        android:layout_gravity="center_horizontal|top" />
+        android:layout_gravity="center_horizontal|top"
+        android:textSize="20sp"
+        android:textColor="#ffff6429" />
 
 </LinearLayout>
