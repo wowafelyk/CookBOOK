@@ -14,6 +14,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.GridView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 
@@ -25,28 +26,40 @@ public class CookBOOK extends ActionBarActivity {
 
 
     private String API_KEY = "3e9166ad629eca6587a5e501e4e30961";
-    private String MY_API_KEY = "473dd92f0fbc20142cca69d26013bc65";
+    private final String MY_API_KEY = "473dd92f0fbc20142cca69d26013bc65";
+    private final String BUNDLE_RECIPE_ARRAY = "BundleRecipeArray";
 
     private final String SERVER_SERCH_URL = "http://food2fork.com/api/search";
     private final String SERVER_GET_URL = "http://food2fork.com/api/get";
     public static final String TEST = "test";
-    String SEARCH = "http://food2fork.com/api/search?key=3e9166ad629eca6587a5e501e4e30961&q=shredded%20chicken";
+    //String SEARCH = "http://food2fork.com/api/search?key=3e9166ad629eca6587a5e501e4e30961&q=shredded%20chicken";
     //"http://food2fork.com/api/search?key={API_KEY}&q=shredded%20chicken";
 
-    private final String BUNDLE_RECIPE_ARRAY = "preferencesRecipeArray";
+    //private final String BUNDLE_RECIPE_ARRAY = "preferencesRecipeArray";
 
     private Recipe[] recipeArray = new Recipe[30];
-    private ListView listView;
-    EditText editText;
-    RecipeAdapter recipeAdapter;
+    private GridView gridView;
+    private EditText editText;
+    private RecipeAdapter recipeAdapter;
+    private boolean sort;
+    private SharedPreferences prefs;
+    private int column;
+    private String query;
+    private Integer page;
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cook_book);
-        listView = (ListView) findViewById(R.id.listView);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        column = prefs.getInt(getResources().getString(R.string.column_one), 1);
+
+        gridView = (GridView) findViewById(R.id.gridView);
+        gridView.setNumColumns(column);
+
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapter, View v, int position, long arg3) {
                 String value = ((Recipe) adapter.getItemAtPosition(position)).getRecipeID();
@@ -62,14 +75,13 @@ public class CookBOOK extends ActionBarActivity {
                 new OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        //String sort;
-
-                        //if(prefs.getBoolean(getResources().getString(R.string.Top_Rated), true))  sort="r";
-                        //else sort="t";
-                        //search("shredded%20chicken", null, null);
+                        page = 1;
                         Editable edit = editText.getText();
-                        search(edit.toString(), null, null);
-                        //get(Integer.toString(35171));
+                        query = edit.toString();
+                        sort = prefs.getBoolean("TOP Rated", true);
+                        String s = sort ? "r" : "t";
+                        search(edit.toString(), s, page.toString());
+
 
                     }
                 }
@@ -89,7 +101,7 @@ public class CookBOOK extends ActionBarActivity {
                 recipeArray[i] = arrayList.get(i);
             }
             recipeAdapter = new RecipeAdapter(this, R.layout.item_layout, recipeArray);
-            listView.setAdapter(recipeAdapter);
+            gridView.setAdapter(recipeAdapter);
         } catch (NullPointerException e) {
             e.printStackTrace();
         }
@@ -98,8 +110,8 @@ public class CookBOOK extends ActionBarActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        if ((listView.getAdapter()) != null) {
-            recipeArray = ((RecipeAdapter) listView.getAdapter()).getData();
+        if ((gridView.getAdapter()) != null) {
+            recipeArray = ((RecipeAdapter) gridView.getAdapter()).getData();
             outState.putSerializable(BUNDLE_RECIPE_ARRAY, (new ArrayList<>(Arrays.asList(recipeArray))));
         }
     }
@@ -120,6 +132,16 @@ public class CookBOOK extends ActionBarActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
+        if (id == R.id.action_serch) {
+
+
+            sort = prefs.getBoolean("TOP Rated", true);
+            String s = sort ? "r" : "t";
+            page++;
+            search(query, s, page.toString());
+
+
+        }
         if (id == R.id.action_settings) {
             SettingsFragment sf = new SettingsFragment();
             sf.show(getSupportFragmentManager(), "MySF");

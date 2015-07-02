@@ -34,10 +34,15 @@
 
     </LinearLayout>
 
-    <ListView
-        android:layout_width="wrap_content"
+    <GridView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/listView"
-        android:footerDividersEnabled="true" />
+        android:id="@+id/gridView"
+        android:footerDividersEnabled="true"
+        android:gravity="center_horizontal|bottom|top"
+        android:numColumns="1"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="1"
+        style="@style/Base.TextAppearance.AppCompat.SearchResult" />
 
 </LinearLayout>

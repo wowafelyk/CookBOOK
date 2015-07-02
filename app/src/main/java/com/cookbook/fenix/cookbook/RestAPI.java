@@ -10,7 +10,7 @@ import android.os.AsyncTask;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.View;
-import android.widget.ListView;
+import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -134,12 +134,12 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
     @Override
     protected void onPostExecute(Recipe[] result) {
 
-        ListView listView = (ListView) activity.findViewById(R.id.listView);
+        GridView gridView = (GridView) activity.findViewById(R.id.gridView);
         RecipeAdapter list;
 
         if (result[1] != null) {
             list = new RecipeAdapter(activity, R.layout.item_layout, result);
-            listView.setAdapter(list);
+            gridView.setAdapter(list);
         } else {
             Recipe r = (Recipe) result[0];
             Log.d(TEST, "Recipe = " + r.toString());

@@ -21,17 +21,32 @@ public class SettingsFragment extends DialogFragment implements View.OnClickList
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInsatceState) {
         getDialog().setTitle(R.string.settings);
         View v = inflater.inflate(R.layout.dialog, null);
+        RadioButton radioButton = (RadioButton) v.findViewById(R.id.radioButton);
         RadioButton radioButton1 = (RadioButton) v.findViewById(R.id.radioButton1);
         RadioButton radioButton2 = (RadioButton) v.findViewById(R.id.radioButton2);
         RadioButton radioButton3 = (RadioButton) v.findViewById(R.id.radioButton3);
         RadioButton radioButton4 = (RadioButton) v.findViewById(R.id.radioButton4);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         prefsEditor = sharedPreferences.edit();
-        radioButton1.setChecked(sharedPreferences.getBoolean(getResources().getString(R.string.GridOutput), false));
-        radioButton2.setChecked(sharedPreferences.getBoolean(getResources().getString(R.string.ListOutput), true));
-        radioButton3.setChecked(sharedPreferences.getBoolean(getResources().getString(R.string.Top_Rated), true));
-        radioButton4.setChecked(sharedPreferences.getBoolean(getResources().getString(R.string.Trending), false));
+        switch (sharedPreferences.getInt(getResources().getString(R.string.column_one), 1)) {
+            case 1:
+                radioButton.setChecked(true);
+                break;
+            case 2:
+                radioButton1.setChecked(true);
+                break;
+            default:
+                radioButton2.setChecked(true);
+                break;
+        }
+        if (sharedPreferences.getBoolean(getResources().getString(R.string.Top_Rated), true)) {
+            radioButton3.setChecked(true);
+        } else radioButton4.setChecked(true);
+
+
+
         Button button = (Button) v.findViewById(R.id.button);
+        radioButton.setOnClickListener(this);
         radioButton1.setOnClickListener(this);
         radioButton2.setOnClickListener(this);
         radioButton3.setOnClickListener(this);
@@ -46,20 +61,24 @@ public class SettingsFragment extends DialogFragment implements View.OnClickList
 
 
         switch (v.getId()) {
+            case R.id.radioButton:
+                prefsEditor.putInt(getResources().getString(R.string.column_one), 1);
+                prefsEditor.commit();
+                break;
             case R.id.radioButton1:
-                prefsEditor.putBoolean(getResources().getString(R.string.GridOutput), true);
+                prefsEditor.putInt(getResources().getString(R.string.column_one), 2);
                 prefsEditor.commit();
                 break;
             case R.id.radioButton2:
-                prefsEditor.putBoolean(getActivity().getResources().getString(R.string.ListOutput), true);
+                prefsEditor.putInt(getResources().getString(R.string.column_one), 3);
                 prefsEditor.commit();
                 break;
             case R.id.radioButton3:
-                prefsEditor.putBoolean(getActivity().getResources().getString(R.string.Top_Rated), true);
+                prefsEditor.putBoolean(getResources().getString(R.string.Top_Rated), true);
                 prefsEditor.commit();
                 break;
             case R.id.radioButton4:
-                prefsEditor.putBoolean(getActivity().getResources().getString(R.string.Trending), true);
+                prefsEditor.putBoolean(getResources().getString(R.string.Top_Rated), false);
                 prefsEditor.commit();
                 break;
             case R.id.button:
