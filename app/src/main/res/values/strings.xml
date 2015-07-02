@@ -1,6 +1,16 @@
 <resources>
     <string name="app_name">CookBOOK</string>
-
+    <string name="settings">Налаштування</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="Ouput_possibility">Організаця лєнти новин</string>
+    <string name="ListOutput">Список</string>
+    <string name="GridOutput">Сітка</string>
+    <string name="Sorting_possibility">Спосіб сортування</string>
+    <string name="Top_Rated">TOP Rated</string>
+    <string name="Trending">Trending</string>
+    <string name="setting_searh">Пошук</string>
+    <string name="Accept">Застосувати</string>
+    <string name="Cancel">Відмінити</string>
+
 </resources>

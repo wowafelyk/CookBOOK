@@ -2,10 +2,12 @@ package com.cookbook.fenix.cookbook;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
@@ -35,6 +37,7 @@ import java.net.URLEncoder;
 public class RestAPI extends AsyncTask<String, String, Recipe[]> {
     public static final String TEST = "test";
     private Activity activity;
+    private FragmentManager fragmentManager;
 
 
     private final String ARRAY_NAME = "recipes";
@@ -49,6 +52,11 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
 
     public RestAPI(Activity activity) {
         this.activity = activity;
+    }
+
+    public RestAPI(Activity activity, FragmentManager fm) {
+        this.activity = activity;
+        this.fragmentManager = fm;
     }
 
 
@@ -89,21 +97,27 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
                 // Append server response in string
                 sb.append(line + "");
             }
-
+            Log.d(TEST, "2");
             jsonResponse = new JSONObject(sb.toString());
+            Log.d(TEST, "3");
             if (jsonResponse.has(ARRAY_NAME)) {
                 recipeArray = parseJSONArray(jsonResponse);
             } else {
-                recipeArray[0] = parseJSONObject(jsonResponse);
+                Log.d(TEST, "full_pars" + jsonResponse.toString());
+                recipeArray[0] = parseJSONObject(jsonResponse.optJSONObject("recipe"));
                 recipeArray[1] = null;
+                Log.d(TEST, "JSONObject hasn't array name1");
             }
 
 
         } catch (MalformedURLException e) {
+            Log.d(TEST, "Crach1 ");
             e.printStackTrace();
         } catch (JSONException e) {
+            Log.d(TEST, "Crach2 ");
             e.printStackTrace();
         } catch (IOException e) {
+            Log.d(TEST, "Crach3 ");
             e.printStackTrace();
         } finally {
             try {
@@ -119,32 +133,50 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
 
     @Override
     protected void onPostExecute(Recipe[] result) {
-        //Toast.makeText(activity, " Received", Toast.LENGTH_SHORT);
-        //TextView text = (TextView) activity.findViewById(R.id.textView2);
-        //text.setText(result.toString());
 
         ListView listView = (ListView) activity.findViewById(R.id.listView);
         RecipeAdapter list;
 
         if (result[1] != null) {
-            list = new RecipeAdapter(activity,R.layout.activity_cook_book,result);
+            list = new RecipeAdapter(activity, R.layout.item_layout, result);
             listView.setAdapter(list);
         } else {
-            Recipe r = result[0];
+            Recipe r = (Recipe) result[0];
+            Log.d(TEST, "Recipe = " + r.toString());
+            RecipeFragment rf = new RecipeFragment().newInstance(r);
+            rf.show(fragmentManager, "MyRecipeFragment");
         }
 
     }
 
 
     private Recipe parseJSONObject(JSONObject obj) {
+
+        Log.d(TEST, "5");
         Recipe result = new Recipe(
                 obj.optString(TITLE), obj.optString(RECIPE_ID), obj.optString(SOCIAL_RANK),
                 obj.optString(PUBLISHER), obj.optString(IMG_URL));
+
+
+        if (obj.has(INGREDIENTS)) {
+            //JSONObject obj=obj.optJSONObject("recipe");
+            String[] s = new String[30];
+            JSONArray arr = obj.optJSONArray(INGREDIENTS);
+            for (int i = 0; i < arr.length(); i++) {
+                s[i] = arr.optString(i);
+            }
+            result.setIngredients(s);
+        }
+
+        Log.d(TEST, "Publisher = " + result.getPublisher());
+        Log.d(TEST, "Title = " + result.getTitle());
 
         try {
             URL url = new URL(result.getImgURL());
             Bitmap bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
             result.setBmp(bmp);
+            Log.d(TEST, result.getBmp().toString());
+            Log.d(TEST, "BMP download");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -164,8 +196,10 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
                     Toast.makeText(activity.getApplicationContext(), " Загрузка фото/відео даних", Toast.LENGTH_SHORT).show();
                 }
             });
+            Log.d(TEST, "4");
             JSONArray jsonArray = obj.getJSONArray(ARRAY_NAME);
             for (int i = 0; i < Integer.parseInt(obj.getString("count")); i++) {
+                Log.d(TEST, "int i = " + i);
                 recipes[i] = parseJSONObject(jsonArray.getJSONObject(i));
             }
 

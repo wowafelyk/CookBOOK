@@ -4,13 +4,16 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.text.Editable;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 
@@ -34,43 +37,71 @@ public class CookBOOK extends ActionBarActivity {
 
     private Recipe[] recipeArray = new Recipe[30];
     private ListView listView;
+    EditText editText;
+    RecipeAdapter recipeAdapter;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cook_book);
-        LinearLayout root = (LinearLayout) findViewById(R.id.root);
-        Button buttonSerch = (Button) findViewById(R.id.buttonserch);
         listView = (ListView) findViewById(R.id.listView);
-        buttonSerch.setOnClickListener(new OnClickListener() {
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onClick(View v) {
-
-                search("shredded%20chicken", null, null);
+            public void onItemClick(AdapterView<?> adapter, View v, int position, long arg3) {
+                String value = ((Recipe) adapter.getItemAtPosition(position)).getRecipeID();
+                get(value);
 
             }
         });
+
+        Button buttonSerch = (Button) findViewById(R.id.buttonserch);
+        editText = (EditText) findViewById(R.id.editText);
+
+        buttonSerch.setOnClickListener(
+                new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        //String sort;
+
+                        //if(prefs.getBoolean(getResources().getString(R.string.Top_Rated), true))  sort="r";
+                        //else sort="t";
+                        //search("shredded%20chicken", null, null);
+                        Editable edit = editText.getText();
+                        search(edit.toString(), null, null);
+                        //get(Integer.toString(35171));
+
+                    }
+                }
+
+        );
+
+
     }
+
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanseState) {
         super.onRestoreInstanceState(savedInstanseState);
-        ArrayList<Recipe> arrayList = (ArrayList) savedInstanseState.getSerializable(BUNDLE_RECIPE_ARRAY);
-        for (int i = 0; i < 30; i++) {
-            recipeArray[i] = arrayList.get(i);
+        try {
+            ArrayList<Recipe> arrayList = (ArrayList) savedInstanseState.getSerializable(BUNDLE_RECIPE_ARRAY);
+            for (int i = 0; i < 30; i++) {
+                recipeArray[i] = arrayList.get(i);
+            }
+            recipeAdapter = new RecipeAdapter(this, R.layout.item_layout, recipeArray);
+            listView.setAdapter(recipeAdapter);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
         }
-
-        RecipeAdapter list;
-        list = new RecipeAdapter(this, R.layout.activity_cook_book, recipeArray);
-        listView.setAdapter(list);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        recipeArray = ((RecipeAdapter) listView.getAdapter()).getData();
-        outState.putSerializable(BUNDLE_RECIPE_ARRAY, (new ArrayList<>(Arrays.asList(recipeArray))));
+        if ((listView.getAdapter()) != null) {
+            recipeArray = ((RecipeAdapter) listView.getAdapter()).getData();
+            outState.putSerializable(BUNDLE_RECIPE_ARRAY, (new ArrayList<>(Arrays.asList(recipeArray))));
+        }
     }
 
 
@@ -90,8 +121,8 @@ public class CookBOOK extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            //SettingsFragment sf = new SettingsFragment();
-            //sf.show(getSupportFragmentManager(), "MySF");
+            SettingsFragment sf = new SettingsFragment();
+            sf.show(getSupportFragmentManager(), "MySF");
             return true;
         }
 
@@ -112,10 +143,10 @@ public class CookBOOK extends ActionBarActivity {
     }
 
     private void get(String id) {
-        String data = "?key=" + API_KEY;
+        String data = "&key=" + API_KEY;
         data += "&rId=" + id;
 
-        new RestAPI(this).execute(SERVER_GET_URL, data);
+        new RestAPI(this, getSupportFragmentManager()).execute(SERVER_GET_URL, data);
     }
 
    /* public int getLayout() {
