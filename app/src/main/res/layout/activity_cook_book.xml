@@ -43,6 +43,7 @@
         android:numColumns="1"
         android:layout_gravity="center_horizontal"
         android:layout_weight="1"
-        style="@style/Base.TextAppearance.AppCompat.SearchResult" />
+        style="@style/Base.TextAppearance.AppCompat.SearchResult"
+        android:fastScrollEnabled="true" />
 
 </LinearLayout>

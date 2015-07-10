@@ -2,6 +2,7 @@ package com.cookbook.fenix.cookbook;
 
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.DialogFragment;
@@ -21,6 +22,7 @@ public class RecipeFragment extends DialogFragment {
 
     private static final String TEST = "DIALOG FRAGMENT";
     private SharedPreferences sharedPreferences;
+    private ImageView image;
 
     static RecipeFragment newInstance(Recipe obj) {
         Log.d(TEST, "Recipe = " + obj.toString());
@@ -39,7 +41,7 @@ public class RecipeFragment extends DialogFragment {
         TextView title = (TextView) v.findViewById(R.id.textView);
         TextView lable = (TextView) v.findViewById(R.id.textView3);
         TextView publisher = (TextView) v.findViewById(R.id.textView1);
-        ImageView image = (ImageView) v.findViewById(R.id.imageView2);
+        image = (ImageView) v.findViewById(R.id.imageView2);
         RatingBar ratingBar = (RatingBar) v.findViewById(R.id.ratingBar);
         TextView ingredients = (TextView) v.findViewById(R.id.addr_edittext);
 
@@ -49,8 +51,10 @@ public class RecipeFragment extends DialogFragment {
 
         title.setText(recipe.getTitle());
         publisher.setText(recipe.getPublisher());
-        Log.d(TEST, "Recipe = " + recipe.getBmp().toString());
-        image.setImageBitmap(recipe.getBmp());
+
+        if(recipe.getBmp()!=null)
+            image.setImageBitmap(recipe.getBmp());
+
         ratingBar.setRating(Float.parseFloat(recipe.getSocialRank()));
         lable.setText("Рейтинг = " + recipe.getSocialRank());
         Log.d(TEST, "ingredients = " + recipe.getIngredients()[0]);
@@ -63,6 +67,11 @@ public class RecipeFragment extends DialogFragment {
         ingredients.setText(str);
         return v;
     }
+
+    public void setImage(Bitmap bmp){
+        image.setImageBitmap(bmp);
+    }
+
 
     public void onDismiss(DialogInterface dialog) {
         super.onDismiss(dialog);

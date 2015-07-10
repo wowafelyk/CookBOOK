@@ -1,17 +1,11 @@
 package com.cookbook.fenix.cookbook;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
-import android.view.View;
 import android.widget.GridView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -20,14 +14,13 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLEncoder;
+
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Class used for managing requests to server http://food2fork.com/
@@ -38,7 +31,10 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
     public static final String TEST = "test";
     private Activity activity;
     private FragmentManager fragmentManager;
-
+    private RecipeAdapter recipeAdapter;
+    private Integer itemPosition;
+    private Integer numberOfItems;
+    private Downloader imageDownloader;
 
     private final String ARRAY_NAME = "recipes";
     private final String RECIPE_NAME = "recipe";
@@ -50,13 +46,16 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
     private final String TITLE = "title";
 
 
-    public RestAPI(Activity activity) {
+    public RestAPI(Activity activity,Downloader downloader) {
         this.activity = activity;
+        this.imageDownloader =downloader;
     }
 
-    public RestAPI(Activity activity, FragmentManager fm) {
+    public RestAPI(Activity activity, FragmentManager fm,Integer position,Downloader downloader) {
         this.activity = activity;
+        this.imageDownloader =downloader;
         this.fragmentManager = fm;
+        this.itemPosition=position;
     }
 
 
@@ -84,6 +83,7 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
             conn.setDoOutput(true);
             OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
             wr.write(params[1]);
+            Log.d(TEST, "Serch params = " + params[1]);
             wr.flush();
 
             // Get the server response
@@ -97,11 +97,23 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
                 // Append server response in string
                 sb.append(line + "");
             }
+            Log.d(TEST, "JSON = "+sb.toString());
+
             //Start Parsing JSON OBJECT
-            Log.d(TEST, "2");
             jsonResponse = new JSONObject(sb.toString());
-            Log.d(TEST, "3");
+            Log.d(TEST, "JSON = "+sb.toString());
+
+
+            /**Cheeking what response we get :
+             * -Array(-array of recipes; -nothing was found)
+             * -Object
+             */
+
             if (jsonResponse.has(ARRAY_NAME)) {
+                numberOfItems = Integer.parseInt(jsonResponse.getString("count"));
+                if (numberOfItems==0) {
+                    return recipeArray;
+                }
                 recipeArray = parseJSONArray(jsonResponse);
             } else {
                 Log.d(TEST, "full_pars" + jsonResponse.toString());
@@ -134,18 +146,58 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
 
     @Override
     protected void onPostExecute(Recipe[] result) {
+        GridView gridView;
+        RecipeAdapter recipeAdapter;
+        activity = imageDownloader.getLink();
 
-        GridView gridView = (GridView) activity.findViewById(R.id.gridView);
-        RecipeAdapter list;
+        if(activity!=null) {
+            gridView = (GridView) activity.findViewById(R.id.gridView);
+            recipeAdapter = imageDownloader.getRecipeAdapter();
+        }else {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            activity = imageDownloader.getLink();
+            gridView = (GridView) activity.findViewById(R.id.gridView);
+            recipeAdapter = imageDownloader.getRecipeAdapter();
+        }
 
-        if (result[1] != null) {
-            list = new RecipeAdapter(activity, R.layout.item_layout, result);
-            gridView.setAdapter(list);
-        } else {
-            Recipe r = (Recipe) result[0];
-            Log.d(TEST, "Recipe = " + r.toString());
-            RecipeFragment rf = new RecipeFragment().newInstance(r);
-            rf.show(fragmentManager, "MyRecipeFragment");
+
+
+        if(result[0]==null){
+            activity.runOnUiThread(new Runnable() {
+                public void run() {
+                    Toast.makeText(activity.getApplicationContext(), " По вашому запиту нічого не знайдено", Toast.LENGTH_LONG).show();
+                }
+            });
+
+        }else {
+            if (result[1] != null) {
+                for (int i = 0; i < numberOfItems; i++) {
+                    result[i].getImgURL();
+                    recipeAdapter.add(result[i]);
+                    imageDownloader.taskDeque.add(new ImageDownloadTask(result[i], recipeAdapter.getCount() - 1, null));
+                    Log.d(TEST, "Count = " + recipeAdapter.getCount());
+                    gridView.setAdapter(recipeAdapter);
+                }
+                Log.d(TEST, "ТЕСТ = " + recipeAdapter.getItem(0).getTitle() + " = " + recipeAdapter.getItem(1).getTitle());
+                //gridView.setAdapter(list);
+            } else {
+                Log.d(TEST, " get set");
+                RecipeFragment rf;
+                if (recipeAdapter.getItem(itemPosition).getBmp() == null) {
+                    rf = new RecipeFragment().newInstance(result[0]);
+                    imageDownloader.taskDeque.addFirst(new ImageDownloadTask(result[0], null, rf));
+                } else {
+                    result[0].setBmp(recipeAdapter.getItem(itemPosition).getBmp());
+                    Recipe r = result[0];
+                    recipeAdapter.alterItem(r, itemPosition);
+                    rf = new RecipeFragment().newInstance(r);
+                }
+                rf.show(fragmentManager, "MyRecipeFragment");
+            }
         }
 
     }
@@ -153,7 +205,7 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
 
     private Recipe parseJSONObject(JSONObject obj) {
 
-        Log.d(TEST, "5");
+        Log.d(TEST, "ParseJSONObject");
         Recipe result = new Recipe(
                 obj.optString(TITLE), obj.optString(RECIPE_ID), obj.optString(SOCIAL_RANK),
                 obj.optString(PUBLISHER), obj.optString(IMG_URL));
@@ -167,51 +219,24 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
             }
             result.setIngredients(s);
         }
-
-        Log.d(TEST, "Publisher = " + result.getPublisher());
-        Log.d(TEST, "Title = " + result.getTitle());
-
-        try {
-            URL url = new URL(result.getImgURL());
-            Bitmap bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-            result.setBmp(bmp);
-            Log.d(TEST, result.getBmp().toString());
-            Log.d(TEST, "BMP download");
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        Log.d(TEST, result.getPublisher());
-        Log.d(TEST, " parseJSONObject");
-
         return result;
     }
 
     private Recipe[] parseJSONArray(JSONObject obj) {
-        Recipe[] recipes = new Recipe[30];
+
         try {
-            activity.runOnUiThread(new Runnable() {
-                public void run() {
-                    Toast.makeText(activity.getApplicationContext(), " Загрузка фото/відео даних", Toast.LENGTH_SHORT).show();
-                }
-            });
-            Log.d(TEST, "4");
+            Recipe[] recipes = new Recipe[numberOfItems];
             JSONArray jsonArray = obj.getJSONArray(ARRAY_NAME);
-            for (int i = 0; i < Integer.parseInt(obj.getString("count")); i++) {
-                Log.d(TEST, "int i = " + i);
+
+            for (int i = 0; i < numberOfItems; i++) {
                 recipes[i] = parseJSONObject(jsonArray.getJSONObject(i));
             }
-
-
+            return recipes;
         } catch (JSONException e) {
-            Log.d(TEST, " Catch parseJSON");
             e.printStackTrace();
         }
-
-        Log.d(TEST, ((Recipe) (recipes[1])).getPublisher());
-
-        return recipes;
+        //Log.d(TEST, ((Recipe) (recipes[1])).getPublisher());
+        return null;
     }
 
 }

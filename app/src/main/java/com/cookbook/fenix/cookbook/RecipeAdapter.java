@@ -10,27 +10,38 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+
 
 /**
  * Created by fenix on 01.07.2015.
  */
 public class RecipeAdapter extends ArrayAdapter<Recipe> {
 
-    public final String TEST = "RECIPE Adapter TEST";
+    public final String TEST = "RecipeAdapter : ";
 
     private Context context;
     private int layoutResourceId;
-    private Recipe[] data = null;
+    private LinkedList<Recipe> data = null;
 
-    public RecipeAdapter(Context context, int layoutResourceId, Recipe[] data) {
+    public RecipeAdapter(Context context){
+        super(context, R.layout.item_layout);
+        this.layoutResourceId = R.layout.item_layout;
+        this.context = context;
+    };
+
+
+    public RecipeAdapter(Context context, int layoutResourceId, LinkedList<Recipe> data) {
         super(context, layoutResourceId, data);
         this.layoutResourceId = layoutResourceId;
         this.context = context;
         this.data = data;
     }
 
+
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public synchronized View getView(int position, View convertView, ViewGroup parent) {
         View row = convertView;
         RecipeHolder holder = null;
 
@@ -49,15 +60,9 @@ public class RecipeAdapter extends ArrayAdapter<Recipe> {
             Log.d(TEST, "Holder TEST 2");
             holder = (RecipeHolder) row.getTag();
         }
+        Log.d(TEST, "Position = "+position);
 
-        Log.d(TEST, holder.toString() + "who are you");
-        Log.d(TEST, holder.txtTitle.toString() + "who are you");
-
-        Recipe recipe = data[position];
-
-        Log.d(TEST, (data[0]).getPublisher() + "1 check");
-
-        Log.d(TEST, recipe.getTitle() + " 2 check");
+        Recipe recipe = this.getItem(position);
 
 
         holder.txtTitle.setText(recipe.getTitle());
@@ -66,14 +71,30 @@ public class RecipeAdapter extends ArrayAdapter<Recipe> {
         return row;
     }
 
+
+
     static class RecipeHolder {
         ImageView imgIcon;
         TextView txtTitle;
         TextView txtPublisher;
     }
 
-    public Recipe[] getData() {
+    public LinkedList<Recipe> getData() {
+
+            data = new LinkedList<Recipe>();
+            for (int i = 0; i < this.getCount(); i++) {
+            data.add(this.getItem(i));
+
+        }
+
         return data;
+    }
+
+    public synchronized void alterItem(Recipe r, int position){
+
+        this.remove(this.getItem(position));
+        this.insert(r, position);
+
     }
 }
 
