@@ -16,23 +16,24 @@ import java.util.concurrent.LinkedBlockingDeque;
 class Downloader extends Thread {
 
     public static final String TEST = "DOWNLOADER";
-    public static final String TAG = "TEST_BMP";
+    public static final String TAG = "FixError";
     private Activity activity;
     public LinkedBlockingDeque<ImageDownloadTask> taskDeque = new LinkedBlockingDeque<ImageDownloadTask>();
     private ImageDownloadTask downloadTask;
     private RecipeAdapter recipeAdapter;
     private Recipe recipe;
+    private boolean cancelTask = false;
     private boolean stop = true;
 
 
-    Downloader  (Activity activity) {
+    Downloader(Activity activity) {
         super();
         this.activity = activity;
     }
 
     @Override
     public void run() {
-        while(stop) {
+        while (stop) {
 
             /*activity.runOnUiThread(new Runnable() {
                 public void run() {
@@ -42,44 +43,39 @@ class Downloader extends Thread {
             Log.d(TEST, " Thread num = " + Thread.currentThread().getId());
 
 
-
-            if(stop&&(taskDeque.peekFirst()!=null)) {
+            if (stop && (taskDeque.peekFirst() != null)) {
                 downloadTask = taskDeque.pollFirst();
                 recipe = downloadTask.getRecipe();
                 try {
 
                     URL url = new URL(recipe.getImgURL());
                     final Bitmap bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-                    Log.d(TAG," height= "+bmp.getHeight()+" width = "+bmp.getWidth()+" size"+sizeOf(bmp));
-
-                    recipe.setBmp(bmp);
-
-                    activity.runOnUiThread(new Runnable() {
-                        public void run() {
-
-                            if(recipeAdapter != null) {
+                    Log.d(TEST, " height= " + bmp.getHeight() + " width = " + bmp.getWidth() + " size" + sizeOf(bmp));
+                    //Log.d(TEST," height= "+bmp.getHeight()+" width = "+bmp.getWidth()+" size"+bmp.getByteCount());
+                    recipe.setBitmap(bmp);
+                    if (recipeAdapter == null) {
+                        try {
+                            Thread.currentThread().sleep(1000);
+                        } catch (InterruptedException e) {
+                            Log.e(TAG, "Downloader crash - waiting adapter link");
+                            e.printStackTrace();
+                        }
+                    } else {
+                        activity.runOnUiThread(new Runnable() {
+                            public void run() {
                                 Integer i = downloadTask.getRecipeAdapterID();
-                                try {
-                                    if (i != null) {
-                                        //CookBOOK.recipeAdapter.getItem(i);
-                                        recipeAdapter.alterItem(recipe, i);
-                                    }
-                                } catch (IndexOutOfBoundsException e) {
-                                    Log.e(TAG, "Index out of bounds = leaft 1 download task working");
-                                    //CookBOOK.recipeList.remove(i);
-                                    //CookBOOK.recipeList.set(i, recipe);
-                                    e.printStackTrace();
-
+                                if (i != null) {
+                                    recipeAdapter.alterItem(recipe, i);
                                 }
                                 RecipeFragment f = downloadTask.getRecipeFragment();
                                 if (f != null) {
                                     f.setImage(bmp);
                                 }
                             }
-                        }
-                    });
 
-                    Log.d(TEST, recipe.getBmp().toString());
+                        });
+                    }
+                    Log.d(TEST, recipe.getBitmap().toString());
                     Log.d(TEST, "BMP download");
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
@@ -87,48 +83,52 @@ class Downloader extends Thread {
                     e.printStackTrace();
                 }
 
-            }else try {
+            } else try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                    e.printStackTrace();
+                }
+
             }
 
         }
 
-    }
-    public String sizeOf(Bitmap bmp){
-       return String.valueOf(bmp.getHeight()*bmp.getWidth());
+    public String sizeOf(Bitmap bmp) {
+        return String.valueOf(bmp.getHeight() * bmp.getWidth());
     }
 
-    public void setStop(){
+    public void setStop() {
         this.stop = false;
     }
 
-    public void setTaskDeque(LinkedBlockingDeque<ImageDownloadTask> deque){
+    public void cancelTask() {
+        this.cancelTask = true;
+    }
+
+    public void setTaskDeque(LinkedBlockingDeque<ImageDownloadTask> deque) {
         this.taskDeque = deque;
     }
 
-    public LinkedBlockingDeque<ImageDownloadTask> getTaskDeque(){
+    public LinkedBlockingDeque<ImageDownloadTask> getTaskDeque() {
         return taskDeque;
     }
 
-    public void setLink(Activity a){
+    public void setLink(Activity a) {
         this.activity = a;
     }
 
-    public  void setRecipeAdapter(RecipeAdapter adapter){
-        this.recipeAdapter=adapter;
+    public void setRecipeAdapter(RecipeAdapter adapter) {
+        this.recipeAdapter = adapter;
     }
 
-    public RecipeAdapter getRecipeAdapter(){
+    public RecipeAdapter getRecipeAdapter() {
         return recipeAdapter;
     }
 
-    public Activity getLink(){
+    public Activity getLink() {
         return activity;
     }
 }
-
 
 
 class ImageDownloadTask {
@@ -136,7 +136,7 @@ class ImageDownloadTask {
     private Integer recipeAdapterID;
     private RecipeFragment recipeFragment;
 
-    public ImageDownloadTask(Recipe r, Integer recipeAdapterID, RecipeFragment f){
+    public ImageDownloadTask(Recipe r, Integer recipeAdapterID, RecipeFragment f) {
         this.recipeAdapterID = recipeAdapterID;
         this.recipe = r;
         this.recipeFragment = f;

@@ -2,19 +2,21 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".CookBOOK"
+    android:layout_height="match_parent"
+    tools:context=".CookBOOK"
     android:orientation="vertical"
-    android:id="@+id/root">
+    android:id="@+id/root"
+    android:padding="@dimen/Margin_5dp">
 
 
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/activity_vertical_margin"
+        android:paddingBottom="@dimen/Margin_5dp"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin">
 
         <EditText
             android:layout_width="match_parent"
@@ -38,12 +40,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/gridView"
-        android:footerDividersEnabled="true"
         android:gravity="center_horizontal|bottom|top"
         android:numColumns="1"
         android:layout_gravity="center_horizontal"
         android:layout_weight="1"
         style="@style/Base.TextAppearance.AppCompat.SearchResult"
-        android:fastScrollEnabled="true" />
+        android:fastScrollEnabled="false"
+        android:horizontalSpacing="2dp"
+        android:verticalSpacing="2dp"
+        android:background="#822c99ff"
+        android:stretchMode="columnWidth" />
 
 </LinearLayout>

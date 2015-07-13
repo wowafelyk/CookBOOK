@@ -20,8 +20,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
-import java.util.concurrent.LinkedBlockingDeque;
-
 /**
  * Class used for managing requests to server http://food2fork.com/
  * <p/>
@@ -51,10 +49,9 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
         this.imageDownloader =downloader;
     }
 
-    public RestAPI(Activity activity, FragmentManager fm,Integer position,Downloader downloader) {
+    public RestAPI(Activity activity, Integer position, Downloader downloader) {
         this.activity = activity;
         this.imageDownloader =downloader;
-        this.fragmentManager = fm;
         this.itemPosition=position;
     }
 
@@ -187,16 +184,17 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
             } else {
                 Log.d(TEST, " get set");
                 RecipeFragment rf;
-                if (recipeAdapter.getItem(itemPosition).getBmp() == null) {
+                if (recipeAdapter.getItem(itemPosition).getBitmap() == null) {
                     rf = new RecipeFragment().newInstance(result[0]);
                     imageDownloader.taskDeque.addFirst(new ImageDownloadTask(result[0], null, rf));
                 } else {
-                    result[0].setBmp(recipeAdapter.getItem(itemPosition).getBmp());
+
+                    result[0].setBitmap(recipeAdapter.getItem(itemPosition).getBitmap());
                     Recipe r = result[0];
                     recipeAdapter.alterItem(r, itemPosition);
                     rf = new RecipeFragment().newInstance(r);
                 }
-                rf.show(fragmentManager, "MyRecipeFragment");
+                rf.show(((CookBOOK) activity).getSupportFragmentManager(), "MyRecipeFragment");
             }
         }
 

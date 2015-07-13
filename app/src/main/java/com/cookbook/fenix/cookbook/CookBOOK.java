@@ -4,11 +4,16 @@ package com.cookbook.fenix.cookbook;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.os.Build;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
+import android.support.v4.util.LruCache;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -19,8 +24,7 @@ import android.widget.EditText;
 import android.widget.GridView;
 
 
-
-
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 import java.util.concurrent.LinkedBlockingDeque;
@@ -45,46 +49,71 @@ public class CookBOOK extends ActionBarActivity {
 
     //private final String BUNDLE_RECIPE_ARRAY = "preferencesRecipeArray";
 
-    private Recipe[] recipeArray = new Recipe[30];
+    //private Recipe[] recipeArray = new Recipe[30];
 
-    private Downloader imageDownloader; //
+    private Downloader imageDownloader;
     private GridView gridView;
     private EditText editText;
-    private boolean sort;
     private SharedPreferences prefs;
+    private RecipeAdapter recipeAdapter;
+    static ArrayList<Recipe> recipeList;
+    private LruCache<String, Bitmap> mMemoryCache;
+
+    private boolean sort;
     private int column;
     private String query;
     private Integer page = 1;
-    private RecipeAdapter recipeAdapter;
-
-    static LinkedList<Recipe> recipeList;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cook_book);
-        Log.d(TEST, "CREATE");
+        if (BuildConfig.DEBUG) Log.d(TEST, " Thread num = " + Thread.currentThread().hashCode());
+
+        //restore preferences
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        //int memoryClass = ((ActivityManager) getSystemService(Context.ACTIVITY_SERVICE)).getMemoryClass();
-        //Log.d(TEST, "Cache available " + memoryClass);
-        Log.d(TEST, " Thread num = " + Thread.currentThread().getId());
+        column = prefs.getInt(getResources().getString(R.string.column_one), 1);
+
+
+
         recipeAdapter = new RecipeAdapter(this);
 
-        imageDownloader = (Downloader)getLastCustomNonConfigurationInstance();
+        // init LruCache
+        final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+        final int cacheSize = maxMemory / 4;
+        if (BuildConfig.DEBUG) Log.d(TEST, "maxMemory= " + maxMemory + " cacheSize= " + cacheSize);
+        mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
+            @Override
+            protected int sizeOf(String key, Bitmap bitmap) {
 
+                if (Build.VERSION.SDK_INT >= 12) {
+                    if (BuildConfig.DEBUG) {
+                        Log.d(TEST, " size= " + (bitmap.getByteCount() / 1024)
+                                + " = " + (bitmap.getHeight() * bitmap.getWidth()));
+                    }
+                    return bitmap.getByteCount() / 1024;
+                } else {
+                    return bitmap.getHeight() * bitmap.getWidth();
+                }
+            }
+        };
+
+
+        imageDownloader = (Downloader) getLastCustomNonConfigurationInstance();
         if(imageDownloader ==null) {
             imageDownloader = new Downloader(this);
+            imageDownloader.setRecipeAdapter(recipeAdapter);
             imageDownloader.start();
         }else{
             Log.d(TEST, "imageDownloader = "+imageDownloader.hashCode());
             imageDownloader.setLink(this);
+            imageDownloader.setRecipeAdapter(recipeAdapter);
         }
         Log.d(TEST,"recipeAdapter "+recipeAdapter.hashCode());
-        imageDownloader.setRecipeAdapter(recipeAdapter);
+
         //imageDownloader.start();
 
-        column = prefs.getInt(getResources().getString(R.string.column_one), 1);
+
         Button buttonSerch = (Button) findViewById(R.id.buttonserch);
         editText = (EditText) findViewById(R.id.editText);
 
@@ -119,8 +148,15 @@ public class CookBOOK extends ActionBarActivity {
         );
     }
 
-    /*@Override
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TEST, "life  Resume");
+    }
+
+    @Override
     protected void onPause() {
+
         super.onPause();
         Log.d(TEST, "life  PAUSE");
     }
@@ -134,7 +170,7 @@ public class CookBOOK extends ActionBarActivity {
     protected void onDestroy() {
         super.onDestroy();
         Log.d(TEST, "life DESTROY");
-    } */
+    }
 
     @Override
     public Object onRetainCustomNonConfigurationInstance(){
@@ -146,37 +182,24 @@ public class CookBOOK extends ActionBarActivity {
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanseState) {
         super.onRestoreInstanceState(savedInstanseState);
-        try {
-            recipeList = (LinkedList) savedInstanseState.getSerializable(BUNDLE_RECIPE_ARRAY);
-            /*for (int i = 0; i < 30; i++) {
-                recipeArray[i] = arrayList.get(i);
-            } */
-            if(recipeList!=null) {
 
+        recipeList = savedInstanseState.getParcelableArrayList(BUNDLE_RECIPE_ARRAY);
+        if (recipeList != null) {
                 recipeAdapter = new RecipeAdapter(this, R.layout.item_layout, recipeList);
                 gridView.setAdapter(recipeAdapter);
                 imageDownloader.setRecipeAdapter(recipeAdapter);
             }
-        } catch (NullPointerException e) {
-            Log.e(TEST, "on REstore error");
-            e.printStackTrace();
-        }
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-
-        try {
-            //imageDownloader.setStop();
+        imageDownloader.setRecipeAdapter(null);
             if ((gridView.getAdapter()) != null) {
-                recipeList = recipeAdapter.getData();
-                outState.putSerializable(BUNDLE_RECIPE_ARRAY, (recipeList));
+                recipeList = (ArrayList<Recipe>) recipeAdapter.getData();
+                outState.putParcelableArrayList(BUNDLE_RECIPE_ARRAY, recipeList);
+
             }
-        } catch (NullPointerException e) {
-            Log.e(TEST, "on onSave error");
-            e.printStackTrace();
-        }
     }
 
 
@@ -229,12 +252,22 @@ public class CookBOOK extends ActionBarActivity {
         data += "&rId=" + id;
 
 
-            new RestAPI(this,getSupportFragmentManager(), position,imageDownloader).execute(SERVER_GET_URL, data);
+        new RestAPI(this, position, imageDownloader).execute(SERVER_GET_URL, data);
 
     }
 
     public RecipeAdapter getRecipeAdapter(){
         return recipeAdapter;
+    }
+
+    public void addBitmapToMemoryCache(String key, Bitmap bitmap) {
+        if (getBitmapFromMemCache(key) == null) {
+            mMemoryCache.put(key, bitmap);
+        }
+    }
+
+    public Bitmap getBitmapFromMemCache(String key) {
+        return mMemoryCache.get(key);
     }
 
 }

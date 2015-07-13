@@ -28,7 +28,7 @@ public class RecipeFragment extends DialogFragment {
         Log.d(TEST, "Recipe = " + obj.toString());
         RecipeFragment f = new RecipeFragment();
         Bundle args = new Bundle();
-        args.putSerializable("Recipe", obj);
+        args.putParcelable("Recipe", obj);
         f.setArguments(args);
         return f;
     }
@@ -45,18 +45,18 @@ public class RecipeFragment extends DialogFragment {
         RatingBar ratingBar = (RatingBar) v.findViewById(R.id.ratingBar);
         TextView ingredients = (TextView) v.findViewById(R.id.addr_edittext);
 
-        Recipe recipe = (Recipe) getArguments().getSerializable("Recipe");
+        Recipe recipe = getArguments().getParcelable("Recipe");
 
         Log.d(TEST, "Recipe = " + recipe.toString());
 
         title.setText(recipe.getTitle());
         publisher.setText(recipe.getPublisher());
 
-        if(recipe.getBmp()!=null)
-            image.setImageBitmap(recipe.getBmp());
+        if (recipe.getBitmap() != null)
+            image.setImageBitmap(recipe.getBitmap());
 
         ratingBar.setRating(Float.parseFloat(recipe.getSocialRank()));
-        lable.setText("Рейтинг = " + recipe.getSocialRank());
+        lable.setText("RATING = " + recipe.getSocialRank());
         Log.d(TEST, "ingredients = " + recipe.getIngredients()[0]);
         StringBuffer str = new StringBuffer();
         int i = 0;

@@ -10,7 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 
@@ -23,16 +23,18 @@ public class RecipeAdapter extends ArrayAdapter<Recipe> {
 
     private Context context;
     private int layoutResourceId;
-    private LinkedList<Recipe> data = null;
+    private ArrayList<Recipe> data = null;
 
-    public RecipeAdapter(Context context){
+    public RecipeAdapter(Context context) {
         super(context, R.layout.item_layout);
         this.layoutResourceId = R.layout.item_layout;
         this.context = context;
-    };
+    }
+
+    ;
 
 
-    public RecipeAdapter(Context context, int layoutResourceId, LinkedList<Recipe> data) {
+    public RecipeAdapter(Context context, int layoutResourceId, ArrayList<Recipe> data) {
         super(context, layoutResourceId, data);
         this.layoutResourceId = layoutResourceId;
         this.context = context;
@@ -53,47 +55,51 @@ public class RecipeAdapter extends ArrayAdapter<Recipe> {
             holder.imgIcon = (ImageView) row.findViewById(R.id.imageView);
             holder.txtTitle = (TextView) row.findViewById(R.id.textView);
             holder.txtPublisher = (TextView) row.findViewById(R.id.textView2);
-
-            Log.d(TEST, "Holder TEST 1");
+            holder.txtRank = (TextView) row.findViewById(R.id.textView3);
             row.setTag(holder);
         } else {
-            Log.d(TEST, "Holder TEST 2");
             holder = (RecipeHolder) row.getTag();
         }
-        Log.d(TEST, "Position = "+position);
+        Log.d(TEST, "Position = " + position);
 
         Recipe recipe = this.getItem(position);
 
 
         holder.txtTitle.setText(recipe.getTitle());
         holder.txtPublisher.setText(recipe.getPublisher());
-        holder.imgIcon.setImageBitmap(recipe.getBmp());
+        holder.imgIcon.setImageBitmap(recipe.getBitmap());
+        holder.txtRank.setText("Rating = " + recipe.getSocialRank());
         return row;
     }
-
 
 
     static class RecipeHolder {
         ImageView imgIcon;
         TextView txtTitle;
         TextView txtPublisher;
+        TextView txtRank;
     }
 
-    public LinkedList<Recipe> getData() {
+    public ArrayList<Recipe> getData() {
 
-            data = new LinkedList<Recipe>();
-            for (int i = 0; i < this.getCount(); i++) {
+        data = new ArrayList<Recipe>(30);
+        for (int i = 0; i < this.getCount(); i++) {
+            Log.d(TEST, "getData" + this.getItem(i).getPublisher());
             data.add(this.getItem(i));
-
         }
-
+        Log.d(TEST, "getData size = " + data.size());
         return data;
     }
 
-    public synchronized void alterItem(Recipe r, int position){
+    public synchronized void alterItem(Recipe r, int position) {
 
-        this.remove(this.getItem(position));
-        this.insert(r, position);
+        // suppression exception when arrayAdapter was cleared and task still running
+        try {
+            this.remove(this.getItem(position));
+            this.insert(r, position);
+        } catch (IndexOutOfBoundsException e) {
+            e.printStackTrace();
+        }
 
     }
 }
