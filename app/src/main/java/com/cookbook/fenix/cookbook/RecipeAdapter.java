@@ -95,7 +95,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeHold
         holder.txtPublisher.setText(recipe.getPublisher());
         //TODO: Change setting bitmap
         //Log.d(TEST,"Current thread = "+Thread.currentThread().hashCode());
-        //Downloader.setBitmapFromCache(holder.imgIcon, recipe,position,true);
+        Downloader.setBitmapFromCache(holder.imgIcon, recipe, position, true);
         holder.imgIcon.setImageBitmap(Downloader.getBitmapFromMemCache(recipe.getImgURL()));
         holder.txtRank.setText("Rating = " + recipe.getSocialRank());
     }

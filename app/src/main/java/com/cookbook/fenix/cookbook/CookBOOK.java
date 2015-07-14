@@ -23,8 +23,8 @@ import java.util.ArrayList;
 public class CookBOOK extends ActionBarActivity {
 
 
-    private String API_KEY = "3e9166ad629eca6587a5e501e4e30961";
-    private final String MY_API_KEY = "473dd92f0fbc20142cca69d26013bc65";   // my key
+    //private String API_KEY = "3e9166ad629eca6587a5e501e4e30961";
+    private final String API_KEY = "473dd92f0fbc20142cca69d26013bc65";   // my key
     private final String BUNDLE_RECIPE_ARRAY = "BundleRecipeArray";
 
 

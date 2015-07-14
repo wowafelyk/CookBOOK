@@ -174,7 +174,7 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
                 for (int i = 0; i < numberOfItems; i++) {
                     result[i].getImgURL();
                     RecipeAdapter.linkedList.add(result[i]);
-                    Downloader.taskDeque.add(new ImageDownloadTask(result[i], null, null));
+                    Downloader.taskDeque.add(new ImageDownloadTask(result[i], RecipeAdapter.linkedList.indexOf(result[i]), null));
                     //Log.d(TEST, "Count = " + mRecipeAdapter.getItemCount());
                 }
                 mRecipeAdapter.notifyDataSetChanged();
