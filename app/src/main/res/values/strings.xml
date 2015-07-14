@@ -14,5 +14,6 @@
     <string name="Accept">Застосувати</string>
     <string name="Cancel">Відмінити</string>
     <string name="Food">Страва</string>
+    <string name="imageSize">Розмір картинки</string>
 
 </resources>

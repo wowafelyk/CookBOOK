@@ -1,7 +1,5 @@
 package com.cookbook.fenix.cookbook;
 
-import android.app.Activity;
-import android.app.ActivityManager;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -11,7 +9,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.GridView;
 import android.widget.RadioButton;
 
 /**
@@ -73,17 +70,17 @@ public class SettingsFragment extends DialogFragment implements View.OnClickList
             case R.id.radioButton:
                 prefsEditor.putInt(getResources().getString(R.string.column_one), 1);
                 prefsEditor.commit();
-                ((GridView)getActivity().findViewById(R.id.gridView)).setNumColumns(1);
+                CookBOOK.sGridLayoutManager.setSpanCount(1);
                 break;
             case R.id.radioButton1:
                 prefsEditor.putInt(getResources().getString(R.string.column_one), 2);
                 prefsEditor.commit();
-                ((GridView)getActivity().findViewById(R.id.gridView)).setNumColumns(2);
+                CookBOOK.sGridLayoutManager.setSpanCount(2);
                 break;
             case R.id.radioButton2:
                 prefsEditor.putInt(getResources().getString(R.string.column_one), 3);
                 prefsEditor.commit();
-                ((GridView)getActivity().findViewById(R.id.gridView)).setNumColumns(3);
+                CookBOOK.sGridLayoutManager.setSpanCount(3);
                 break;
             case R.id.radioButton3:
                 prefsEditor.putBoolean(getResources().getString(R.string.Top_Rated), true);
@@ -99,6 +96,7 @@ public class SettingsFragment extends DialogFragment implements View.OnClickList
             default:
                 break;
         }
+        CookBOOK.sRecipeAdapter.notifyDataSetChanged();
 
     }
 

@@ -17,7 +17,8 @@
             android:id="@+id/textView"
             android:layout_gravity="center_horizontal"
             android:layout_margin="@dimen/Margin_5dp"
-            android:textSize="18sp" />
+            android:textSize="18sp"
+            android:textColor="#ff6464c2" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -25,7 +26,8 @@
             android:text="New Text"
             android:id="@+id/textView1"
             android:layout_gravity="center_horizontal"
-            android:textSize="16dp" />
+            android:textSize="16dp"
+            android:textColor="#ffff7a22" />
 
         <ImageView
             android:layout_width="match_parent"
@@ -33,7 +35,8 @@
             android:id="@+id/imageView2"
             android:layout_gravity="center_horizontal|top"
             android:contentDescription=""
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:adjustViewBounds="true" />
 
         <LinearLayout
             android:orientation="vertical"

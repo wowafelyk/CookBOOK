@@ -4,6 +4,7 @@ import android.app.Activity;
 
 import android.os.AsyncTask;
 import android.support.v4.app.FragmentManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.GridView;
 import android.widget.Toast;
@@ -28,8 +29,6 @@ import java.net.URLConnection;
 public class RestAPI extends AsyncTask<String, String, Recipe[]> {
     public static final String TEST = "test";
     private Activity activity;
-    private FragmentManager fragmentManager;
-    private RecipeAdapter recipeAdapter;
     private Integer itemPosition;
     private Integer numberOfItems;
     private Downloader imageDownloader;
@@ -143,13 +142,13 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
 
     @Override
     protected void onPostExecute(Recipe[] result) {
-        GridView gridView;
-        RecipeAdapter recipeAdapter;
+        RecyclerView mRecyclerView;
+        RecipeAdapter mRecipeAdapter;
         activity = imageDownloader.getLink();
 
         if(activity!=null) {
-            gridView = (GridView) activity.findViewById(R.id.gridView);
-            recipeAdapter = imageDownloader.getRecipeAdapter();
+            mRecyclerView = (RecyclerView) activity.findViewById(R.id.recyclerView);
+            mRecipeAdapter = imageDownloader.getRecipeAdapter();
         }else {
             try {
                 Thread.sleep(1000);
@@ -157,8 +156,8 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
                 e.printStackTrace();
             }
             activity = imageDownloader.getLink();
-            gridView = (GridView) activity.findViewById(R.id.gridView);
-            recipeAdapter = imageDownloader.getRecipeAdapter();
+            mRecyclerView = (RecyclerView) activity.findViewById(R.id.recyclerView);
+            mRecipeAdapter = imageDownloader.getRecipeAdapter();
         }
 
 
@@ -174,26 +173,18 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
             if (result[1] != null) {
                 for (int i = 0; i < numberOfItems; i++) {
                     result[i].getImgURL();
-                    recipeAdapter.add(result[i]);
-                    imageDownloader.taskDeque.add(new ImageDownloadTask(result[i], recipeAdapter.getCount() - 1, null));
-                    Log.d(TEST, "Count = " + recipeAdapter.getCount());
-                    gridView.setAdapter(recipeAdapter);
+                    RecipeAdapter.linkedList.add(result[i]);
+                    Downloader.taskDeque.add(new ImageDownloadTask(result[i], null, null));
+                    //Log.d(TEST, "Count = " + mRecipeAdapter.getItemCount());
                 }
-                Log.d(TEST, "ТЕСТ = " + recipeAdapter.getItem(0).getTitle() + " = " + recipeAdapter.getItem(1).getTitle());
-                //gridView.setAdapter(list);
+                mRecipeAdapter.notifyDataSetChanged();
+                Log.d(TEST, "ТЕСТ = " + RecipeAdapter.linkedList.get(0).getTitle() + " = " + RecipeAdapter.linkedList.get(1).getTitle());
             } else {
                 Log.d(TEST, " get set");
                 RecipeFragment rf;
-                if (recipeAdapter.getItem(itemPosition).getBitmap() == null) {
-                    rf = new RecipeFragment().newInstance(result[0]);
-                    imageDownloader.taskDeque.addFirst(new ImageDownloadTask(result[0], null, rf));
-                } else {
-
-                    result[0].setBitmap(recipeAdapter.getItem(itemPosition).getBitmap());
                     Recipe r = result[0];
-                    recipeAdapter.alterItem(r, itemPosition);
+                RecipeAdapter.linkedList.set(itemPosition, r);
                     rf = new RecipeFragment().newInstance(r);
-                }
                 rf.show(((CookBOOK) activity).getSupportFragmentManager(), "MyRecipeFragment");
             }
         }

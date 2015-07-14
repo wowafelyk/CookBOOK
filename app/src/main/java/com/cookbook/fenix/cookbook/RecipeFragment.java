@@ -1,12 +1,13 @@
 package com.cookbook.fenix.cookbook;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.DialogFragment;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,7 +37,11 @@ public class RecipeFragment extends DialogFragment {
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         getDialog().setTitle(R.string.Food);
-        View v = inflater.inflate(R.layout.activity_dilaog, null);
+        final Context Theme = new ContextThemeWrapper(getActivity(), R.style.AlertDialog_AppCompat_Light);
+        LayoutInflater layoutInflater = inflater.cloneInContext(Theme);
+        View v = layoutInflater.inflate(R.layout.activity_dilaog, null);
+
+
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         TextView title = (TextView) v.findViewById(R.id.textView);
         TextView lable = (TextView) v.findViewById(R.id.textView3);
@@ -52,8 +57,8 @@ public class RecipeFragment extends DialogFragment {
         title.setText(recipe.getTitle());
         publisher.setText(recipe.getPublisher());
 
-        if (recipe.getBitmap() != null)
-            image.setImageBitmap(recipe.getBitmap());
+        //setting bitmap to image
+        Downloader.setBitmapFromCache(image, recipe, null, false);
 
         ratingBar.setRating(Float.parseFloat(recipe.getSocialRank()));
         lable.setText("RATING = " + recipe.getSocialRank());
@@ -67,11 +72,6 @@ public class RecipeFragment extends DialogFragment {
         ingredients.setText(str);
         return v;
     }
-
-    public void setImage(Bitmap bmp){
-        image.setImageBitmap(bmp);
-    }
-
 
     public void onDismiss(DialogInterface dialog) {
         super.onDismiss(dialog);

@@ -1,12 +1,13 @@
 package com.cookbook.fenix.cookbook;
 
-import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -17,86 +18,101 @@ import java.util.LinkedList;
 /**
  * Created by fenix on 01.07.2015.
  */
-public class RecipeAdapter extends ArrayAdapter<Recipe> {
+public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeHolder> {
 
-    public final String TEST = "RecipeAdapter : ";
+    public static final String TEST = "RecipeAdapter : ";
+    public static LinkedList<Recipe> linkedList = null; //in sample private String[] mDataset;
+    private SharedPreferences mSharedPreferences;
+    private Context mContext;
 
-    private Context context;
-    private int layoutResourceId;
-    private ArrayList<Recipe> data = null;
+    //TODO: Change constructor
+    public RecipeAdapter(LinkedList<Recipe> data, Context context) {
+        super();
+        linkedList = data;
+        this.mContext = context;
+    }
+
+    public RecipeAdapter(ArrayList<Recipe> data, Context context) {
+        super();
+        linkedList = new LinkedList<Recipe>(data);
+        this.mContext = context;
+    }
 
     public RecipeAdapter(Context context) {
-        super(context, R.layout.item_layout);
-        this.layoutResourceId = R.layout.item_layout;
-        this.context = context;
+        super();
+        linkedList = new LinkedList<Recipe>();
+        this.mContext = context;
     }
 
-    ;
+    private static OnItemClickListener mListener;
 
-
-    public RecipeAdapter(Context context, int layoutResourceId, ArrayList<Recipe> data) {
-        super(context, layoutResourceId, data);
-        this.layoutResourceId = layoutResourceId;
-        this.context = context;
-        this.data = data;
+    public interface OnItemClickListener {
+        void onItemClick(View itemView, int position);
     }
 
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        mListener = listener;
+    }
+
+    public static class RecipeHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        public ImageView imgIcon;
+        public TextView txtTitle;
+        public TextView txtPublisher;
+        public TextView txtRank;
+
+
+        public RecipeHolder(final View itemView) {
+            super(itemView);
+            imgIcon = (ImageView) itemView.findViewById(R.id.imageView);
+            txtTitle = (TextView) itemView.findViewById(R.id.textView);
+            txtPublisher = (TextView) itemView.findViewById(R.id.textView2);
+            txtRank = (TextView) itemView.findViewById(R.id.textView3);
+
+            itemView.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View v) {
+            if (mListener != null) {
+                Log.d(TEST, "RecipeAdapter - listener ");
+                mListener.onItemClick(v, getPosition());
+            }
+        }
+    }
 
     @Override
-    public synchronized View getView(int position, View convertView, ViewGroup parent) {
-        View row = convertView;
-        RecipeHolder holder = null;
-
-        if (row == null) {
-            LayoutInflater inflater = ((Activity) context).getLayoutInflater();
-            row = inflater.inflate(layoutResourceId, parent, false);
-
-            holder = new RecipeHolder();
-            holder.imgIcon = (ImageView) row.findViewById(R.id.imageView);
-            holder.txtTitle = (TextView) row.findViewById(R.id.textView);
-            holder.txtPublisher = (TextView) row.findViewById(R.id.textView2);
-            holder.txtRank = (TextView) row.findViewById(R.id.textView3);
-            row.setTag(holder);
-        } else {
-            holder = (RecipeHolder) row.getTag();
-        }
-        Log.d(TEST, "Position = " + position);
-
-        Recipe recipe = this.getItem(position);
-
-
-        holder.txtTitle.setText(recipe.getTitle());
-        holder.txtPublisher.setText(recipe.getPublisher());
-        holder.imgIcon.setImageBitmap(recipe.getBitmap());
-        holder.txtRank.setText("Rating = " + recipe.getSocialRank());
-        return row;
+    public RecipeHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout, parent, false);
+        //TODO: set layout parameters
+        RecipeHolder rh = new RecipeHolder(v);
+        return rh;
     }
 
+    @Override
+    public void onBindViewHolder(RecipeHolder holder, int position) {
+        Recipe recipe = linkedList.get(position);
+        holder.txtTitle.setText(recipe.getTitle());
+        holder.txtPublisher.setText(recipe.getPublisher());
+        //TODO: Change setting bitmap
+        //Log.d(TEST,"Current thread = "+Thread.currentThread().hashCode());
+        //Downloader.setBitmapFromCache(holder.imgIcon, recipe,position,true);
+        holder.imgIcon.setImageBitmap(Downloader.getBitmapFromMemCache(recipe.getImgURL()));
+        holder.txtRank.setText("Rating = " + recipe.getSocialRank());
+    }
 
-    static class RecipeHolder {
-        ImageView imgIcon;
-        TextView txtTitle;
-        TextView txtPublisher;
-        TextView txtRank;
+    @Override
+    public int getItemCount() {
+        return linkedList.size();
     }
 
     public ArrayList<Recipe> getData() {
-
-        data = new ArrayList<Recipe>(30);
-        for (int i = 0; i < this.getCount(); i++) {
-            Log.d(TEST, "getData" + this.getItem(i).getPublisher());
-            data.add(this.getItem(i));
-        }
-        Log.d(TEST, "getData size = " + data.size());
-        return data;
+        return new ArrayList<Recipe>(linkedList);
     }
 
-    public synchronized void alterItem(Recipe r, int position) {
-
+    public void alterItem(Integer position) {
         // suppression exception when arrayAdapter was cleared and task still running
         try {
-            this.remove(this.getItem(position));
-            this.insert(r, position);
+            this.notifyDataSetChanged();
         } catch (IndexOutOfBoundsException e) {
             e.printStackTrace();
         }
