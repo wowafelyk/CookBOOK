@@ -15,7 +15,11 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by fenix on 05.07.2015.
@@ -31,10 +35,14 @@ class Downloader extends Thread {
     private ImageDownloadTask downloadTask;
     private RecipeAdapter recipeAdapter;
     private Recipe recipe;
-    private boolean cancelTask = false;
+    private boolean stopPool = true;
     private boolean stop = true;
+    private ReentrantLock lock = new ReentrantLock();
+    Runnable task;
     private Bitmap bmp;
     private Integer mInfo[] = new Integer[4];
+    private ExecutorService executor = Executors.newFixedThreadPool(3);
+
 
 
     Downloader(Activity activity) {
@@ -44,7 +52,7 @@ class Downloader extends Thread {
 
 
         final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
-        final int cacheSize = maxMemory / 2;
+        final int cacheSize = maxMemory / 4;
         mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
             @Override
             protected int sizeOf(String key, Bitmap bitmap) {
@@ -66,78 +74,19 @@ class Downloader extends Thread {
     public void run() {
         while (stop) {
 
-            /*activity.runOnUiThread(new Runnable() {
-                public void run() {
-                    Toast.makeText(activity.getApplicationContext(), "  " + Thread.currentThread().getId() + " = Downloader", Toast.LENGTH_SHORT).show();
-                }
-            });*/
-
+            Log.d(TEST, "Current thread =  " + Thread.currentThread().hashCode());
+            Log.d(TEST, "maxMemory =  " + Runtime.getRuntime().maxMemory() / 1024);
             Log.d(TAG, "size = " + taskDeque.size());
-            if (stop && (taskDeque.peekFirst() != null)) {
-                downloadTask = taskDeque.pollFirst();
-                recipe = downloadTask.getRecipe();
-                final Integer recipeAdapterID = downloadTask.getPointer();
-                if (recipeAdapterID != null) saveCashInfo(recipeAdapterID);
-                if (!existsBitmap(recipe.getImgURL())) {
+            //downloadTask = taskDeque.poll();
+            //if (downloadTask = null) {
+            //new Thread(new LoadTask()).start();
+            if (taskDeque.size() >= 1) {
+                while (stopPool && (poolDownloadTask())) {
 
-                    InputStream is = null;
-                    URL url = null;
-                    URLConnection conn;
-                    BufferedInputStream bis = null;
-                    bmp = null;
-                    try {
-                        conn = new URL(recipe.getImgURL()).openConnection();
-                        is = conn.getInputStream();
-                        bmp = BitmapFactory.decodeStream(is);
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                        if (bis != null) try {
-                            bis.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        if (is != null) try {
-                            is.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
                     }
+                //executor.shutdown();
 
-                    //Log.d(TEST, " height= " + bmp.getHeight() + " width = " + bmp.getWidth() + " size" + sizeOf(bmp));
-                    //Log.d(TEST, " height= " + bmp.getHeight() + " width = " + bmp.getWidth() + " size" + bmp.getByteCount());
-                    if (bmp != null) {
-                        addBitmapToMemoryCache(recipe.getImgURL(), bmp);
-                        if (recipeAdapter == null) {
-                            try {
-                                Log.d(TEST, "Current thread = sleep ");
-                                Thread.currentThread().sleep(1000);
-                            } catch (InterruptedException e) {
-                                Log.e(TAG, "Downloader crash - waiting adapter link");
-                                e.printStackTrace();
-                            }
-                        } else {
-                            sActivity.runOnUiThread(new Runnable() {
-                                public void run() {
-                                    recipeAdapter.alterItem(recipeAdapterID);
-                                    final ImageView v = downloadTask.getImageView();
-                                    if (v != null) {
-                                        sActivity.runOnUiThread(new Runnable() {
-                                            public void run() {
-                                                v.setImageBitmap(bmp);
-                                            }
-                                        });
 
-                                    }
-                                }
-
-                            });
-                        }
-                        //Log.d(TEST, "Current thread = " + Thread.currentThread().hashCode());
-                    }
-                }
 
             } else {
                 Log.d(TEST, "info = " + mInfo[0] + " " + mInfo[1] + " " + mInfo[2] + " " + mInfo[3]);
@@ -155,9 +104,133 @@ class Downloader extends Thread {
 
     }
 
+    private synchronized boolean poolDownloadTask() {
+        downloadTask = taskDeque.poll();
+
+        //Log.d(TEST, "Recipe2 = Task  " + downloadTask.hashCode());
+        //Log.d(TEST, "Recipe2 = View  " + downloadTask.getImageView().hashCode());
+        if (downloadTask != null) {
+            task = new LoadTask();
+            executor.execute(task);
+            return true;
+        }
+        return false;
+    }
+
+
+    class LoadTask implements Runnable {
+        private ImageDownloadTask ltDownloadTask;
+        private Recipe ltRecipe;
+        private Bitmap ltBmp;
+
+        LoadTask() {
+            ltDownloadTask = downloadTask;
+            // Log.d(TEST, "Recipe2 = Task " + ltDownloadTask.hashCode());
+            ltRecipe = ltDownloadTask.getRecipe();
+            //Log.d(TEST, "Recipe2 = ltRecipe " + ltRecipe.hashCode());
+            //Log.d(TEST, "Recipe2 =  " + ltRecipe.hashCode() + " View = " + ltDownloadTask.getImageView().hashCode());
+
+        }
+
+
+        public void run() {
+
+            Log.d(TEST, "Thread1 =  " + Thread.currentThread().hashCode());
+            ltRecipe = ltDownloadTask.getRecipe();
+            final Integer recipeAdapterID = ltDownloadTask.getPointer();
+            if (recipeAdapterID != null)
+                saveCashInfo(recipeAdapterID);
+            if (!existsBitmap(ltRecipe.getImgURL())) {
+                //Log.d(TEST, "Recipe3 =  " + recipe.hashCode() + " View = " + ltDownloadTask.getImageView().hashCode());
+
+                InputStream is = null;
+                URLConnection conn;
+                BufferedInputStream bis = null;
+                ltBmp = null;
+                try {
+                    conn = new URL(ltRecipe.getImgURL()).openConnection();
+                    is = conn.getInputStream();
+                    ltBmp = BitmapFactory.decodeStream(is);
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (bis != null) try {
+                        bis.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    if (is != null) try {
+                        is.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (ltBmp != null) {
+                    addBitmapToMemoryCache(ltRecipe.getImgURL(), ltBmp);
+                    sActivity.runOnUiThread(new Runnable() {
+                        public void run() {
+                            recipeAdapter.alterItem(recipeAdapterID);
+                        }
+                    });
+
+                }
+            } else ltBmp = getBitmapFromMemCache(ltRecipe.getImgURL());
+
+            if (recipeAdapter == null)
+
+            {
+                try {
+                    Log.d(TEST, "Current thread = sleep wait adapter init ");
+                    Thread.currentThread().sleep(1000);
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "Downloader crash - waiting adapter link");
+                    e.printStackTrace();
+                }
+            }
+
+            final ImageView v = ltDownloadTask.getImageView();
+
+            if ((v != null) && (ltBmp != null)) {
+                v.post(new Runnable() {
+                    public void run() {
+                        Log.d(TEST, "Recipe3 =  " + ltRecipe.hashCode() + " View = " + v.hashCode());
+                        recipeAdapter.alterItem(recipeAdapterID);
+                        v.setImageBitmap(ltBmp);
+                    }
+                });
+            }
+        }
+
+        private void saveCashInfo(Integer i) {
+            lock.lock();
+            try {
+                mInfo[0] = mInfo[1];
+                mInfo[1] = i;
+                mInfo[2] = null;
+                mInfo[3] = null;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private boolean existsBitmap(String key) {
+            if (getBitmapFromMemCache(key) == null) {
+                return false;
+            } else if (getBitmapFromMemCache(key).equals(placeholder)) {
+                return false;
+            }
+
+
+            return true;
+        }
+    }
+
     public String sizeOf(Bitmap bmp) {
         return String.valueOf(bmp.getHeight() * bmp.getWidth());
     }
+
 
     public static Bitmap decodeBitmapFromStream(BufferedInputStream stream, Rect outPadding, int reqWidth, int reqHeight) {
 
@@ -197,82 +270,73 @@ class Downloader extends Thread {
         return inSampleSize;
     }
 
-
     //TODO: delete useless method
-    public void setStop() {
-        this.stop = false;
+
+    /**
+     * if b set true thread Downloader stoped
+     *
+     * @param b
+     */
+    public void setStop(Boolean b) {
+        this.stop = !b;
     }
 
-    public void cancelTask() {
-        this.cancelTask = true;
+    /**
+     * if b set true thread Downloader stoped
+     *
+     * @param b
+     */
+    public void stopPool(Boolean b) {
+        this.stopPool = !b;
     }
 
     public void setTaskDeque(LinkedBlockingDeque<ImageDownloadTask> deque) {
         taskDeque = deque;
     }
 
-    /**
-     * mInfo
-     *
-     * @return
-     */
-    private boolean cashNextImg() {
+    private synchronized boolean cashNextImg() {
         int i = RecipeAdapter.linkedList.size();
-        if (mInfo[0] != null & mInfo[1] != null) {
-            Log.d(TEST, "info3 = " + mInfo[0] + " " + mInfo[1] + " " + mInfo[2] + " " + mInfo[3] + " " + i);
-            if (mInfo[2] == null || mInfo[3] == null) {
-                mInfo[2] = mInfo[1];
-                mInfo[3] = mInfo[1];
-            }
-            Log.d(TEST, "info2 = " + mInfo[0] + " " + mInfo[1] + " " + mInfo[2] + " " + mInfo[3]);
-            if (mInfo[0] <= mInfo[1]) {
-                //make cache for 15 bitmaps
-
-                if ((mInfo[3] < i - 1) & (mInfo[3] - mInfo[1] < 20)) {
-                    taskDeque.add(new
-                            ImageDownloadTask(RecipeAdapter.linkedList.get(mInfo[3]++), null, null));
-                    return true;
-                } else if ((mInfo[2] > 0) & (mInfo[0] - mInfo[2] < 20)) {
-                    taskDeque.add(new
-                            ImageDownloadTask(RecipeAdapter.linkedList.get(mInfo[2]--), null, null));
-                    return true;
+        lock.lock();
+        try {
+            if (mInfo[0] != null & mInfo[1] != null) {
+                Log.d(TEST, "info3 = " + mInfo[0] + " " + mInfo[1] + " " + mInfo[2] + " " + mInfo[3] + " " + i);
+                if ((mInfo[2] == null) || (mInfo[3] == null)) {
+                    mInfo[2] = mInfo[1];
+                    mInfo[3] = mInfo[1];
                 }
-            } else if (mInfo[0] > mInfo[1]) {
-                //make cache for 15 bitmaps
-                if ((mInfo[2] > 0) & (mInfo[2] - mInfo[0] < 20)) {
-                    taskDeque.add(new
-                            ImageDownloadTask(RecipeAdapter.linkedList.get(mInfo[2]--), null, null));
-                    return true;
-                } else if ((mInfo[3] < i - 1) & (mInfo[3] - mInfo[1] < 20)) {
-                    taskDeque.add(new
-                            ImageDownloadTask(RecipeAdapter.linkedList.get(mInfo[3]++), null, null));
-                    return true;
+                Log.d(TEST, "info2 = " + mInfo[0] + " " + mInfo[1] + " " + mInfo[2] + " " + mInfo[3]);
+                if (mInfo[0] <= mInfo[1]) {
+                    //make cache for 15 bitmaps
+
+                    if ((mInfo[3] < i - 1) && (mInfo[3] - mInfo[1] < 20)) {
+                        taskDeque.add(new
+                                ImageDownloadTask(RecipeAdapter.linkedList.get(mInfo[3]++), null, null));
+                        return true;
+                    } else if ((mInfo[2] > 0) & (mInfo[0] - mInfo[2] < 20)) {
+                        taskDeque.add(new
+                                ImageDownloadTask(RecipeAdapter.linkedList.get(mInfo[2]--), null, null));
+                        return true;
+                    }
+                } else if (mInfo[0] > mInfo[1]) {
+                    //make cache for 15 bitmaps
+                    if ((mInfo[2] > 0) & (mInfo[2] - mInfo[0] < 20)) {
+                        taskDeque.add(new
+                                ImageDownloadTask(RecipeAdapter.linkedList.get(mInfo[2]--), null, null));
+                        return true;
+                    } else if ((mInfo[3] < i - 1) & (mInfo[3] - mInfo[1] < 20)) {
+                        taskDeque.add(new
+                                ImageDownloadTask(RecipeAdapter.linkedList.get(mInfo[3]++), null, null));
+                        return true;
+                    }
                 }
+                return false;
+
+
             }
             return false;
-
-
+        } finally {
+            lock.unlock();
         }
-        return false;
-    }
-
-    private void saveCashInfo(Integer i) {
-        mInfo[0] = mInfo[1];
-        mInfo[1] = i;
-        mInfo[2] = null;
-        mInfo[3] = null;
-    }
-
-
-    private boolean existsBitmap(String key) {
-        if (getBitmapFromMemCache(key) == null) {
-            return false;
-        } else if (getBitmapFromMemCache(key).equals(placeholder)) {
-            return false;
-        }
-
-
-        return true;
     }
 
     public static void addBitmapToMemoryCache(String key, Bitmap bitmap) {
@@ -288,12 +352,16 @@ class Downloader extends Thread {
 
     public static void setBitmapFromCache(ImageView v, Recipe r, Integer position, boolean b) {
         Bitmap bmp = mMemoryCache.get(r.getImgURL());
-
-        if (bmp == null) {
+        Log.d(TEST, "Recipe1 =  " + r.hashCode() + " View = " + v.hashCode());
+        if ((bmp == null) && (b == true)) {
             addBitmapToMemoryCache(r.getImgURL(), placeholder);
             taskDeque.addLast(new ImageDownloadTask(r, position, v));
-        } else if ((bmp == null) & (b == false)) {
+        } else if ((bmp == null) && (b == false)) {
             taskDeque.addFirst(new ImageDownloadTask(r, position, v));
+        } else if ((bmp != null) && (b == false)) {
+            taskDeque.addFirst(new ImageDownloadTask(r, position, v));
+        } else if ((bmp != null) && (b == true)) {
+            taskDeque.addLast(new ImageDownloadTask(r, position, v));
         } else if (bmp != null) {
             v.setImageBitmap(bmp);
         }
@@ -326,13 +394,14 @@ class ImageDownloadTask {
     private Recipe recipe;
     private Integer pointer;
     private ImageView imageView;
+    public static final String TEST = "ImadeDownloadTask";
     //private RecipeFragment recipeFragment;
 
     public ImageDownloadTask(Recipe r, Integer pointer, ImageView v) {
         this.pointer = pointer;
         this.recipe = r;
         this.imageView = v;
-
+        //Log.d(TEST, "Recipe0 =  " + recipe.hashCode() + " View = " + imageView.hashCode());
     }
 
     public Recipe getRecipe() {

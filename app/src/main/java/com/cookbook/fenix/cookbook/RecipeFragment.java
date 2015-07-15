@@ -52,13 +52,15 @@ public class RecipeFragment extends DialogFragment {
 
         Recipe recipe = getArguments().getParcelable("Recipe");
 
-        Log.d(TEST, "Recipe = " + recipe.toString());
+        //Log.d(TEST, "Recipe = " + recipe.toString());
 
         title.setText(recipe.getTitle());
         publisher.setText(recipe.getPublisher());
 
         //setting bitmap to image
+        //image.setImageBitmap(Downloader.getBitmapFromMemCache(recipe.getImgURL()));
         Downloader.setBitmapFromCache(image, recipe, null, false);
+        Log.d(TEST, "Recipe =  " + recipe.hashCode() + " View = " + image.hashCode());
 
         ratingBar.setRating(Float.parseFloat(recipe.getSocialRank()));
         lable.setText("RATING = " + recipe.getSocialRank());
