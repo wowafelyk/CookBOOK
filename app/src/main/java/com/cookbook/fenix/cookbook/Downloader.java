@@ -90,6 +90,7 @@ class Downloader extends Thread {
 
             } else {
                 Log.d(TEST, "info = " + mInfo[0] + " " + mInfo[1] + " " + mInfo[2] + " " + mInfo[3]);
+                //if (!cashNextImg()) {
                 if (!cashNextImg()) {
                     try {
                         Log.d(TEST, "Current thread = sleep ");
