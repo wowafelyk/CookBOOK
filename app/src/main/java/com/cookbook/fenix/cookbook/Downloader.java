@@ -18,13 +18,12 @@ import java.net.URLConnection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by fenix on 05.07.2015.
  */
-class Downloader extends Thread {
+ public class Downloader extends Thread {
 
     public static final String TEST = "DOWNLOADER";
     public static final String TAG = "FixError";
@@ -52,7 +51,7 @@ class Downloader extends Thread {
 
 
         final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
-        final int cacheSize = maxMemory / 4;
+        final int cacheSize = maxMemory / 7;
         mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
             @Override
             protected int sizeOf(String key, Bitmap bitmap) {
@@ -61,7 +60,7 @@ class Downloader extends Thread {
                     //    Log.d(TEST, " size= " + (bitmap.getByteCount() / 1024)
                     //           + " = " + (bitmap.getHeight() * bitmap.getWidth()));
                     //}
-                    return bitmap.getByteCount() / 1024;
+                    return bitmap.getByteCount()/ 1024;
                 } else {
                     return bitmap.getHeight() * bitmap.getWidth();
                 }
@@ -73,7 +72,7 @@ class Downloader extends Thread {
     @Override
     public void run() {
         while (stop) {
-
+            Log.d(TEST, "Current thread LruCache=  " + mMemoryCache.size());
             Log.d(TEST, "Current thread =  " + Thread.currentThread().hashCode());
             Log.d(TEST, "maxMemory =  " + Runtime.getRuntime().maxMemory() / 1024);
             Log.d(TAG, "size = " + taskDeque.size());
@@ -90,8 +89,8 @@ class Downloader extends Thread {
 
             } else {
                 Log.d(TEST, "info = " + mInfo[0] + " " + mInfo[1] + " " + mInfo[2] + " " + mInfo[3]);
-                //if (!cashNextImg()) {
-                if (!cashNextImg()) {
+                //if (!cachNextImg()) {
+                if (true) {   //!cachNextImg()
                     try {
                         Log.d(TEST, "Current thread = sleep ");
                         Thread.sleep(1000);
@@ -111,8 +110,7 @@ class Downloader extends Thread {
         //Log.d(TEST, "Recipe2 = Task  " + downloadTask.hashCode());
         //Log.d(TEST, "Recipe2 = View  " + downloadTask.getImageView().hashCode());
         if (downloadTask != null) {
-            task = new LoadTask();
-            executor.execute(task);
+            executor.execute(new LoadTask(downloadTask));
             return true;
         }
         return false;
@@ -124,7 +122,8 @@ class Downloader extends Thread {
         private Recipe ltRecipe;
         private Bitmap ltBmp;
 
-        LoadTask() {
+        LoadTask(ImageDownloadTask t) {
+
             ltDownloadTask = downloadTask;
             // Log.d(TEST, "Recipe2 = Task " + ltDownloadTask.hashCode());
             ltRecipe = ltDownloadTask.getRecipe();
@@ -295,7 +294,7 @@ class Downloader extends Thread {
         taskDeque = deque;
     }
 
-    private synchronized boolean cashNextImg() {
+    private synchronized boolean cachNextImg() {
         int i = RecipeAdapter.linkedList.size();
         lock.lock();
         try {

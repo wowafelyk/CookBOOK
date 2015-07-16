@@ -39,7 +39,6 @@ public class CookBOOK extends ActionBarActivity {
 
 
     private Downloader imageDownloader;
-    private Downloader imageDownloader1;
     private EditText editText;
     private SharedPreferences prefs;
     public static RecipeAdapter sRecipeAdapter;
@@ -87,33 +86,6 @@ public class CookBOOK extends ActionBarActivity {
 
         //TODO: multiple threads
         imageDownloader = (Downloader) getLastCustomNonConfigurationInstance();
-        imageDownloader1 = new Downloader(this);
-        imageDownloader1.setRecipeAdapter(sRecipeAdapter);
-        imageDownloader1.start();
-        Downloader imageDownloader2 = (Downloader) getLastCustomNonConfigurationInstance();
-        imageDownloader2 = new Downloader(this);
-        imageDownloader2.setRecipeAdapter(sRecipeAdapter);
-        imageDownloader2.start();
-        Downloader imageDownloader3 = (Downloader) getLastCustomNonConfigurationInstance();
-        imageDownloader3 = new Downloader(this);
-        imageDownloader3.setRecipeAdapter(sRecipeAdapter);
-        imageDownloader3.start();
-        Downloader imageDownloader4 = (Downloader) getLastCustomNonConfigurationInstance();
-        imageDownloader4 = new Downloader(this);
-        imageDownloader4.setRecipeAdapter(sRecipeAdapter);
-        imageDownloader4.start();
-
-
-
-
-
-
-
-
-
-
-
-
 
         if(imageDownloader ==null) {
             imageDownloader = new Downloader(this);
@@ -203,10 +175,7 @@ public class CookBOOK extends ActionBarActivity {
             sRecipeAdapter = new RecipeAdapter(mRecipeList, this);
             mRecyclerView.setAdapter(sRecipeAdapter);
             imageDownloader.setRecipeAdapter(sRecipeAdapter);
-
             //TODO: multiple threads
-            imageDownloader1.setRecipeAdapter(sRecipeAdapter);
-
             }
     }
 
