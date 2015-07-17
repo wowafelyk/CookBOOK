@@ -32,11 +32,7 @@ public class CookBOOK extends ActionBarActivity {
     private final String SERVER_SERCH_URL = "http://food2fork.com/api/search";
     private final String SERVER_GET_URL = "http://food2fork.com/api/get";
     public static final String TEST = "CookBOOK";
-    private final String DOWNLOADER_THREAD = "CurrentThread";
 
-
-    //String SEARCH = "http://food2fork.com/api/search?key=3e9166ad629eca6587a5e501e4e30961&q=shredded%20chicken";
-    //"http://food2fork.com/api/search?key={API_KEY}&q=shredded%20chicken";
 
     private RecipeAdapter mRecipeAdapter;
     private Downloader mImageDownloader;
@@ -60,6 +56,7 @@ public class CookBOOK extends ActionBarActivity {
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         column = prefs.getInt(getResources().getString(R.string.column_one), 1);
 
+
         mRecipeAdapter = new RecipeAdapter(this);
         mImageDownloader = (Downloader) getLastCustomNonConfigurationInstance();
         if (mImageDownloader == null) {
@@ -72,15 +69,14 @@ public class CookBOOK extends ActionBarActivity {
             mImageDownloader.setLink(this);
             mImageDownloader.setRecipeAdapter(mRecipeAdapter);
         }
+        mRecyclerView = (RecyclerView) findViewById(R.id.recyclerView);
+        mGridLayoutManager = new PreCachingLayoutManager(this, column);
+        mRecyclerView.setHasFixedSize(true);
+        mRecyclerView.setLayoutManager(mGridLayoutManager);
 
 
         Button buttonSerch = (Button) findViewById(R.id.buttonserch);
         editText = (EditText) findViewById(R.id.editText);
-
-        mRecyclerView = (RecyclerView) findViewById(R.id.recyclerView);
-        mGridLayoutManager = new GridLayoutManager(this, column);
-        mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.setLayoutManager(mGridLayoutManager);
 
         //Обробка натисканнь на Елемент
         mRecipeAdapter.setOnItemClickListener(new RecipeAdapter.OnItemClickListener() {
@@ -98,6 +94,7 @@ public class CookBOOK extends ActionBarActivity {
                     public void onClick(View v) {
                         Downloader.taskDeque.clear();
                         RecipeAdapter.linkedList.clear();
+                        mImageDownloader.stopPool(true);
                         mRecipeAdapter.notifyDataSetChanged();
                         page = 1;
                         Editable edit = editText.getText();
@@ -113,25 +110,20 @@ public class CookBOOK extends ActionBarActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TEST, "life  Resume");
     }
 
     @Override
     protected void onPause() {
-
         super.onPause();
-        Log.d(TEST, "life  PAUSE");
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        Log.d(TEST, "life  STOP");
     }
 
     protected void onDestroy() {
         super.onDestroy();
-        Log.d(TEST, "life DESTROY");
     }
 
     @Override
@@ -140,7 +132,6 @@ public class CookBOOK extends ActionBarActivity {
         return mImageDownloader;
     }
 
-
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
@@ -148,11 +139,10 @@ public class CookBOOK extends ActionBarActivity {
         //TODO:Change RecipeAdapter.likedList to mLinkedList
         mRecipeList = savedInstanceState.getParcelableArrayList(BUNDLE_RECIPE_ARRAY);
         query = savedInstanceState.getString("query");
-        /*if (mRecipeList != null) {
+        if (mRecipeList != null) {
+            RecipeAdapter.linkedList.clear();
             RecipeAdapter.linkedList.addAll(mRecipeList);
-        } else {
-            mRecipeAdapter = new RecipeAdapter(mRecipeList, this);
-        }*/
+        }
         mRecyclerView.setAdapter(mRecipeAdapter);
         mImageDownloader.setRecipeAdapter(mRecipeAdapter);
     }
@@ -163,10 +153,10 @@ public class CookBOOK extends ActionBarActivity {
         Log.d(TEST, "life  onSave");
         mImageDownloader.setRecipeAdapter(null);
         outState.putString("query", query);
-        /*if (mRecipeAdapter.getItemCount() != 0) {
+        if (mRecipeAdapter.getItemCount() != 0) {
             mRecipeList = mRecipeAdapter.getData();
             outState.putParcelableArrayList(BUNDLE_RECIPE_ARRAY, mRecipeList);
-        }*/
+        }
     }
 
 
@@ -202,7 +192,6 @@ public class CookBOOK extends ActionBarActivity {
 
     private void search(String q, String s, String p) {
         String data = "&key=" + API_KEY;
-        //if (q != ""&q != " ")
         data += "&q=" + q;
         if (s != null) {
             data += "&sort=" + s;
@@ -216,7 +205,8 @@ public class CookBOOK extends ActionBarActivity {
         new RestAPI(this, mImageDownloader).execute(SERVER_SERCH_URL, data);
     }
 
-    private void get(String id, Integer position) {
+    private void
+    get(String id, Integer position) {
         String data = "&key=" + API_KEY;
         data += "&rId=" + id;
         Toast.makeText(this, " Загрузка даних зачекайте", Toast.LENGTH_SHORT).show();
@@ -227,10 +217,6 @@ public class CookBOOK extends ActionBarActivity {
         } else {
             new RestAPI(this, position, mImageDownloader).execute(SERVER_GET_URL, data);
         }
-    }
-
-    public RecipeAdapter getRecipeAdapter() {
-        return mRecipeAdapter;
     }
 
     public void notifyDataSetChanged() {

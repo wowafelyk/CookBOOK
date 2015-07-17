@@ -26,7 +26,7 @@ public class RecipeFragment extends DialogFragment {
     private ImageView image;
 
     static RecipeFragment newInstance(Recipe obj) {
-        Log.d(TEST, "Recipe = " + obj.toString());
+
         RecipeFragment f = new RecipeFragment();
         Bundle args = new Bundle();
         args.putParcelable("Recipe", obj);
@@ -52,24 +52,21 @@ public class RecipeFragment extends DialogFragment {
 
         Recipe recipe = getArguments().getParcelable("Recipe");
 
-        //Log.d(TEST, "Recipe = " + recipe.toString());
 
         title.setText(recipe.getTitle());
         publisher.setText(recipe.getPublisher());
 
-        //setting bitmap to image
-        //image.setImageBitmap(Downloader.getBitmapFromMemCache(recipe.getImgURL()));
+
         Downloader.setBitmapFromCache(image, recipe, null, false);
         Log.d(TEST, "Recipe =  " + recipe.hashCode() + " View = " + image.hashCode());
 
         ratingBar.setRating(Float.parseFloat(recipe.getSocialRank()));
         lable.setText("RATING = " + recipe.getSocialRank());
-        Log.d(TEST, "ingredients = " + recipe.getIngredients()[0]);
+
         StringBuffer str = new StringBuffer();
         int i = 0;
         while (recipe.getIngredients()[i] != null) {
             str.append(recipe.getIngredients()[i++] + "\n");
-            Log.d(TEST, "ingredients = " + recipe.getIngredients()[i] + "i=" + i);
         }
         ingredients.setText(str);
         return v;

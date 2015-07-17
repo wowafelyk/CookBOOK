@@ -3,7 +3,6 @@ package com.cookbook.fenix.cookbook;
 import android.app.Activity;
 
 import android.os.AsyncTask;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -178,19 +177,20 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
                 for (int i = 0; i < numberOfItems; i++) {
                     result[i].getImgURL();
                     RecipeAdapter.linkedList.add(result[i]);
-                    Downloader.taskDeque.add(new ImageDownloadTask(result[i],
-                            RecipeAdapter.linkedList.indexOf(result[i]), null));
-                    //Log.d(TEST, "Count = " + mRecipeAdapter.getItemCount());
                 }
                 mRecipeAdapter.notifyDataSetChanged();
-                //Log.d(TEST, "ТЕСТ = " + RecipeAdapter.linkedList.get(0).getTitle() + " = " + RecipeAdapter.linkedList.get(1).getTitle());
+
             } else {
-                Log.d(TEST, " get set");
-                RecipeFragment rf;
-                Recipe r = result[0];
-                RecipeAdapter.linkedList.set(itemPosition, r);
-                rf = new RecipeFragment().newInstance(r);
-                rf.show(((CookBOOK) activity).getSupportFragmentManager(), "MyRecipeFragment");
+                try {
+                    RecipeFragment rf;
+                    Recipe r = result[0];
+                    RecipeAdapter.linkedList.set(itemPosition, r);
+                    rf = new RecipeFragment().newInstance(r);
+                    rf.show(((CookBOOK) activity).getSupportFragmentManager(), "MyRecipeFragment");
+                } catch (IndexOutOfBoundsException e) {
+                    //RecipeAdapter.linkedList was cleared because user change his choice
+                    //and want run search instead watch detailed element
+                }
             }
         }
 
@@ -229,7 +229,7 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        //Log.d(TEST, ((Recipe) (recipes[1])).getPublisher());
+
         return null;
     }
 

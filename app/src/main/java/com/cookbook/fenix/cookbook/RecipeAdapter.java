@@ -2,7 +2,7 @@ package com.cookbook.fenix.cookbook;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -76,7 +76,6 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeHold
         @Override
         public void onClick(View v) {
             if (mListener != null) {
-                Log.d(TEST, "RecipeAdapter - listener ");
                 mListener.onItemClick(v, getPosition());
             }
         }
@@ -95,10 +94,8 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeHold
         Recipe recipe = linkedList.get(position);
         holder.txtTitle.setText(recipe.getTitle());
         holder.txtPublisher.setText(recipe.getPublisher());
-        //TODO: Change setting bitmap
+
         Downloader.setBitmapFromCache(holder.imgIcon, recipe, position, true);
-        //Log.d(TEST, "Recipe =  " + recipe.hashCode() + " View = " + holder.imgIcon.hashCode());
-        //holder.imgIcon.setImageBitmap(Downloader.getBitmapFromMemCache(recipe.getImgURL()));
         holder.txtRank.setText("Rating = " + recipe.getSocialRank());
     }
 
@@ -111,14 +108,46 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeHold
         return new ArrayList<Recipe>(linkedList);
     }
 
-    public void alterItem() {
+    public void alterItem(Integer pointer) {
         // suppression exception when arrayAdapter was cleared and task still running
         try {
-            this.notifyDataSetChanged();
+            if (pointer != null) {
+                this.notifyItemChanged(pointer);
+            } else this.notifyDataSetChanged();
         } catch (IndexOutOfBoundsException e) {
             e.printStackTrace();
         }
 
+    }
+}
+
+class PreCachingLayoutManager extends GridLayoutManager {
+    private int mLayoutSpace = 1000;
+    private int extraLayoutSpace = -1;
+    private Context context;
+
+    public PreCachingLayoutManager(Context context, int spanCount) {
+        super(context, spanCount);
+        this.context = context;
+    }
+
+    public PreCachingLayoutManager(Context context, int spanCount, int space) {
+        super(context, spanCount);
+        this.context = context;
+        mLayoutSpace = space;
+    }
+
+
+    public void setExtraLayoutSpace(int extraLayoutSpace) {
+        this.extraLayoutSpace = extraLayoutSpace;
+    }
+
+    @Override
+    protected int getExtraLayoutSpace(RecyclerView.State state) {
+        if (extraLayoutSpace > 0) {
+            return extraLayoutSpace;
+        }
+        return mLayoutSpace;
     }
 }
 

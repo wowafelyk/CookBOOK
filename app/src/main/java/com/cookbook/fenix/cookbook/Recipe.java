@@ -17,10 +17,7 @@ public class Recipe implements Parcelable {
     private String[] ingredients;
     private String imgURL;
 
-
     private final String TEST = "Recipe";
-
-
 
     public Recipe() {
     }
