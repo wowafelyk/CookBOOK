@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.DialogFragment;
+import android.support.v7.widget.GridLayoutManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +19,14 @@ import android.widget.RadioButton;
 public class SettingsFragment extends DialogFragment implements View.OnClickListener {
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor prefsEditor;
+    private GridLayoutManager mGridLayoutManager;
+
+
+    static SettingsFragment newInstance(GridLayoutManager mGridLayoutManager) {
+        SettingsFragment f = new SettingsFragment();
+        f.mGridLayoutManager = mGridLayoutManager;
+        return f;
+    }
 
     @Override
     public void onCreate(Bundle savedInstaceState){
@@ -70,17 +80,17 @@ public class SettingsFragment extends DialogFragment implements View.OnClickList
             case R.id.radioButton:
                 prefsEditor.putInt(getResources().getString(R.string.column_one), 1);
                 prefsEditor.commit();
-                CookBOOK.sGridLayoutManager.setSpanCount(1);
+                mGridLayoutManager.setSpanCount(1);
                 break;
             case R.id.radioButton1:
                 prefsEditor.putInt(getResources().getString(R.string.column_one), 2);
                 prefsEditor.commit();
-                CookBOOK.sGridLayoutManager.setSpanCount(2);
+                mGridLayoutManager.setSpanCount(2);
                 break;
             case R.id.radioButton2:
                 prefsEditor.putInt(getResources().getString(R.string.column_one), 3);
                 prefsEditor.commit();
-                CookBOOK.sGridLayoutManager.setSpanCount(3);
+                mGridLayoutManager.setSpanCount(3);
                 break;
             case R.id.radioButton3:
                 prefsEditor.putBoolean(getResources().getString(R.string.Top_Rated), true);
@@ -96,7 +106,7 @@ public class SettingsFragment extends DialogFragment implements View.OnClickList
             default:
                 break;
         }
-        CookBOOK.sRecipeAdapter.notifyDataSetChanged();
+        ((CookBOOK) getActivity()).notifyDataSetChanged();
 
     }
 

@@ -3,10 +3,8 @@ package com.cookbook.fenix.cookbook;
 import android.app.Activity;
 
 import android.os.AsyncTask;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.widget.GridView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -17,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -28,10 +27,10 @@ import java.net.URLConnection;
  */
 public class RestAPI extends AsyncTask<String, String, Recipe[]> {
     public static final String TEST = "test";
-    private Activity activity;
+    private WeakReference<Activity> activityWeakReference;
     private Integer itemPosition;
     private Integer numberOfItems;
-    private Downloader imageDownloader;
+    private Downloader mImageDownloader;
 
     private final String ARRAY_NAME = "recipes";
     private final String RECIPE_NAME = "recipe";
@@ -43,15 +42,15 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
     private final String TITLE = "title";
 
 
-    public RestAPI(Activity activity,Downloader downloader) {
-        this.activity = activity;
-        this.imageDownloader =downloader;
+    public RestAPI(Activity activity, Downloader downloader) {
+        this.activityWeakReference = new WeakReference<Activity>(activity);
+        this.mImageDownloader = downloader;
     }
 
     public RestAPI(Activity activity, Integer position, Downloader downloader) {
-        this.activity = activity;
-        this.imageDownloader =downloader;
-        this.itemPosition=position;
+        this.activityWeakReference = new WeakReference<Activity>(activity);
+        this.mImageDownloader = downloader;
+        this.itemPosition = position;
     }
 
 
@@ -64,11 +63,6 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
 
         // Send data
         try {
-            activity.runOnUiThread(new Runnable() {
-                public void run() {
-                    Toast.makeText(activity.getApplicationContext(), " Загрузка даних зачекайте", Toast.LENGTH_SHORT).show();
-                }
-            });
 
             // Defined URL  where to send data
             URL url = new URL(params[0]);
@@ -93,11 +87,11 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
                 // Append server response in string
                 sb.append(line + "");
             }
-            Log.d(TEST, "JSON = "+sb.toString());
+            Log.d(TEST, "JSON = " + sb.toString());
 
             //Start Parsing JSON OBJECT
             jsonResponse = new JSONObject(sb.toString());
-            Log.d(TEST, "JSON = "+sb.toString());
+            Log.d(TEST, "JSON = " + sb.toString());
 
 
             /**Cheeking what response we get :
@@ -107,7 +101,7 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
 
             if (jsonResponse.has(ARRAY_NAME)) {
                 numberOfItems = Integer.parseInt(jsonResponse.getString("count"));
-                if (numberOfItems==0) {
+                if (numberOfItems == 0) {
                     return recipeArray;
                 }
                 recipeArray = parseJSONArray(jsonResponse);
@@ -142,49 +136,60 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
 
     @Override
     protected void onPostExecute(Recipe[] result) {
-        RecyclerView mRecyclerView;
-        RecipeAdapter mRecipeAdapter;
-        activity = imageDownloader.getLink();
 
-        if(activity!=null) {
-            mRecyclerView = (RecyclerView) activity.findViewById(R.id.recyclerView);
-            mRecipeAdapter = imageDownloader.getRecipeAdapter();
-        }else {
+        RecipeAdapter mRecipeAdapter;
+        Activity activity = activityWeakReference.get();
+
+        if (activity != null) {
+            mRecipeAdapter = mImageDownloader.getRecipeAdapter();
+        } else {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            activity = imageDownloader.getLink();
-            mRecyclerView = (RecyclerView) activity.findViewById(R.id.recyclerView);
-            mRecipeAdapter = imageDownloader.getRecipeAdapter();
+            activityWeakReference = mImageDownloader.getLink();
+            activity = activityWeakReference.get();
+            mRecipeAdapter = mImageDownloader.getRecipeAdapter();
         }
 
 
+        if (result[0] == null) {
+            try {
+                activity.runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(activityWeakReference.get(),
+                                " По вашому запиту нічого не знайдено", Toast.LENGTH_LONG).show();
 
-        if(result[0]==null){
-            activity.runOnUiThread(new Runnable() {
-                public void run() {
-                    Toast.makeText(activity.getApplicationContext(), " По вашому запиту нічого не знайдено", Toast.LENGTH_LONG).show();
-                }
-            });
+                    }
+                });
+            } catch (NullPointerException e) {
+                activityWeakReference = mImageDownloader.getLink();
+                activityWeakReference.get().runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(activityWeakReference.get(),
+                                " По вашому запиту нічого не знайдено", Toast.LENGTH_LONG).show();
 
-        }else {
+                    }
+                });
+            }
+        } else {
             if (result[1] != null) {
                 for (int i = 0; i < numberOfItems; i++) {
                     result[i].getImgURL();
                     RecipeAdapter.linkedList.add(result[i]);
-                    Downloader.taskDeque.add(new ImageDownloadTask(result[i], RecipeAdapter.linkedList.indexOf(result[i]), null));
+                    Downloader.taskDeque.add(new ImageDownloadTask(result[i],
+                            RecipeAdapter.linkedList.indexOf(result[i]), null));
                     //Log.d(TEST, "Count = " + mRecipeAdapter.getItemCount());
                 }
                 mRecipeAdapter.notifyDataSetChanged();
-                Log.d(TEST, "ТЕСТ = " + RecipeAdapter.linkedList.get(0).getTitle() + " = " + RecipeAdapter.linkedList.get(1).getTitle());
+                //Log.d(TEST, "ТЕСТ = " + RecipeAdapter.linkedList.get(0).getTitle() + " = " + RecipeAdapter.linkedList.get(1).getTitle());
             } else {
                 Log.d(TEST, " get set");
                 RecipeFragment rf;
-                    Recipe r = result[0];
+                Recipe r = result[0];
                 RecipeAdapter.linkedList.set(itemPosition, r);
-                    rf = new RecipeFragment().newInstance(r);
+                rf = new RecipeFragment().newInstance(r);
                 rf.show(((CookBOOK) activity).getSupportFragmentManager(), "MyRecipeFragment");
             }
         }
@@ -201,7 +206,7 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
 
 
         if (obj.has(INGREDIENTS)) {
-            String[] s = new String[30];
+            String[] s = new String[40];
             JSONArray arr = obj.optJSONArray(INGREDIENTS);
             for (int i = 0; i < arr.length(); i++) {
                 s[i] = arr.optString(i);

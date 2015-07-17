@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 
 import java.util.ArrayList;
@@ -37,16 +38,13 @@ public class CookBOOK extends ActionBarActivity {
     //String SEARCH = "http://food2fork.com/api/search?key=3e9166ad629eca6587a5e501e4e30961&q=shredded%20chicken";
     //"http://food2fork.com/api/search?key={API_KEY}&q=shredded%20chicken";
 
-
-    private Downloader imageDownloader;
+    private RecipeAdapter mRecipeAdapter;
+    private Downloader mImageDownloader;
     private EditText editText;
     private SharedPreferences prefs;
-    public static RecipeAdapter sRecipeAdapter;
-    //private LruCache<String, Bitmap> mMemoryCache;
     private ArrayList<Recipe> mRecipeList;
     private RecyclerView mRecyclerView;
-    public static GridLayoutManager sGridLayoutManager;
-
+    private GridLayoutManager mGridLayoutManager;
     private boolean sort;
     private int column;
     private String query;
@@ -62,68 +60,45 @@ public class CookBOOK extends ActionBarActivity {
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         column = prefs.getInt(getResources().getString(R.string.column_one), 1);
 
-        sRecipeAdapter = new RecipeAdapter(this);
-
-       /* init LruCache
-        final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
-        final int cacheSize = maxMemory / 4;
-        if(BuildConfig.DEBUG) Log.d(TEST, "maxMemory= " + maxMemory+ " cacheSize= "+cacheSize);
-        mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
-            @Override
-            protected int sizeOf(String key, Bitmap bitmap) {
-
-                if(Build.VERSION.SDK_INT>=12) {
-                    if(BuildConfig.DEBUG) {
-                        Log.d(TEST, " size= " + (bitmap.getByteCount() / 1024)
-                                + " = " + (bitmap.getHeight() * bitmap.getWidth()));
-                    }
-                    return bitmap.getByteCount() / 1024;
-                }else{
-                    return bitmap.getHeight()*bitmap.getWidth();
-                }
-            }
-        };*/
-
-        //TODO: multiple threads
-        imageDownloader = (Downloader) getLastCustomNonConfigurationInstance();
-
-        if(imageDownloader ==null) {
-            imageDownloader = new Downloader(this);
-            imageDownloader.setRecipeAdapter(sRecipeAdapter);
-            imageDownloader.start();
-        }else{
-            Log.d(TEST, "imageDownloader = "+imageDownloader.hashCode());
-            imageDownloader.setLink(this);
-            imageDownloader.setRecipeAdapter(sRecipeAdapter);
+        mRecipeAdapter = new RecipeAdapter(this);
+        mImageDownloader = (Downloader) getLastCustomNonConfigurationInstance();
+        if (mImageDownloader == null) {
+            mImageDownloader = new Downloader(this);
+            mImageDownloader.setRecipeAdapter(mRecipeAdapter);
+            mImageDownloader.start();
+            Log.d(TEST, "mRecipeAdapter " + mRecipeAdapter.hashCode());
+        } else {
+            Log.d(TEST, "mImageDownloader = " + mImageDownloader.hashCode());
+            mImageDownloader.setLink(this);
+            mImageDownloader.setRecipeAdapter(mRecipeAdapter);
         }
-        Log.d(TEST, "sRecipeAdapter " + sRecipeAdapter.hashCode());
+
 
         Button buttonSerch = (Button) findViewById(R.id.buttonserch);
         editText = (EditText) findViewById(R.id.editText);
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerView);
-        sGridLayoutManager = new GridLayoutManager(this, column);
+        mGridLayoutManager = new GridLayoutManager(this, column);
         mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.setLayoutManager(sGridLayoutManager);
+        mRecyclerView.setLayoutManager(mGridLayoutManager);
 
         //Обробка натисканнь на Елемент
-        sRecipeAdapter.setOnItemClickListener(new RecipeAdapter.OnItemClickListener() {
+        mRecipeAdapter.setOnItemClickListener(new RecipeAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View itemView, int position) {
-                String value = RecipeAdapter.linkedList.get(position).getRecipeID();
-                get(value, position);
+                get(RecipeAdapter.linkedList.get(position).getRecipeID(), position);
             }
         });
-        mRecyclerView.setAdapter(sRecipeAdapter);
+        mRecyclerView.setAdapter(mRecipeAdapter);
 
         //Обробка натисканнь на кнопку пуску
         buttonSerch.setOnClickListener(
                 new OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        RecipeAdapter.linkedList.clear();
-                        sRecipeAdapter.notifyDataSetChanged();
                         Downloader.taskDeque.clear();
+                        RecipeAdapter.linkedList.clear();
+                        mRecipeAdapter.notifyDataSetChanged();
                         page = 1;
                         Editable edit = editText.getText();
                         query = edit.toString();
@@ -160,35 +135,38 @@ public class CookBOOK extends ActionBarActivity {
     }
 
     @Override
-    public Object onRetainCustomNonConfigurationInstance(){
-        Log.d(TEST, "imageDownloader = "+imageDownloader.hashCode());
-        return imageDownloader;
+    public Object onRetainCustomNonConfigurationInstance() {
+        Log.d(TEST, "mImageDownloader = " + mImageDownloader.hashCode());
+        return mImageDownloader;
     }
 
 
     @Override
-    protected void onRestoreInstanceState(Bundle savedInstanseState) {
-        super.onRestoreInstanceState(savedInstanseState);
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
         Log.d(TEST, "life  onRestore");
-        mRecipeList = savedInstanseState.getParcelableArrayList(BUNDLE_RECIPE_ARRAY);
-        if (mRecipeList != null) {
-            sRecipeAdapter = new RecipeAdapter(mRecipeList, this);
-            mRecyclerView.setAdapter(sRecipeAdapter);
-            imageDownloader.setRecipeAdapter(sRecipeAdapter);
-            //TODO: multiple threads
-            }
+        //TODO:Change RecipeAdapter.likedList to mLinkedList
+        mRecipeList = savedInstanceState.getParcelableArrayList(BUNDLE_RECIPE_ARRAY);
+        query = savedInstanceState.getString("query");
+        /*if (mRecipeList != null) {
+            RecipeAdapter.linkedList.addAll(mRecipeList);
+        } else {
+            mRecipeAdapter = new RecipeAdapter(mRecipeList, this);
+        }*/
+        mRecyclerView.setAdapter(mRecipeAdapter);
+        mImageDownloader.setRecipeAdapter(mRecipeAdapter);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         Log.d(TEST, "life  onSave");
-        imageDownloader.setRecipeAdapter(null);
-        if (sRecipeAdapter.getItemCount() != 0) {
-            mRecipeList = sRecipeAdapter.getData();
+        mImageDownloader.setRecipeAdapter(null);
+        outState.putString("query", query);
+        /*if (mRecipeAdapter.getItemCount() != 0) {
+            mRecipeList = mRecipeAdapter.getData();
             outState.putParcelableArrayList(BUNDLE_RECIPE_ARRAY, mRecipeList);
-
-            }
+        }*/
     }
 
 
@@ -214,7 +192,7 @@ public class CookBOOK extends ActionBarActivity {
             search(query, s, page.toString());
         }
         if (id == R.id.action_settings) {
-            SettingsFragment sf = new SettingsFragment();
+            SettingsFragment sf = new SettingsFragment().newInstance(mGridLayoutManager);
             sf.show(getSupportFragmentManager(), "MySF");
             return true;
         }
@@ -225,36 +203,38 @@ public class CookBOOK extends ActionBarActivity {
     private void search(String q, String s, String p) {
         String data = "&key=" + API_KEY;
         //if (q != ""&q != " ")
-        data += "&q="+q;
+        data += "&q=" + q;
         if (s != null) {
             data += "&sort=" + s;
         }
         if (p != null) {
             data += "&page=" + p;
         }
+
+        Toast.makeText(this, " Загрузка даних зачекайте", Toast.LENGTH_SHORT).show();
         //send REST query using AsyncTask
-        new RestAPI(this,imageDownloader).execute(SERVER_SERCH_URL, data);
+        new RestAPI(this, mImageDownloader).execute(SERVER_SERCH_URL, data);
     }
 
     private void get(String id, Integer position) {
         String data = "&key=" + API_KEY;
         data += "&rId=" + id;
-        //send REST query using AsyncTask
-        new RestAPI(this, position, imageDownloader).execute(SERVER_GET_URL, data);
-    }
-
-    public RecipeAdapter getmRecipeAdapter() {
-        return sRecipeAdapter;
-    }
-
-    /*public void addBitmapToMemoryCache(String key, Bitmap bitmap) {
-        if (getBitmapFromMemCache(key) == null) {
-            mMemoryCache.put(key, bitmap);
+        Toast.makeText(this, " Загрузка даних зачекайте", Toast.LENGTH_SHORT).show();
+        //if we have
+        if (RecipeAdapter.linkedList.get(position).getIngredients() != null) {
+            RecipeFragment rf = new RecipeFragment().newInstance(RecipeAdapter.linkedList.get(position));
+            rf.show(getSupportFragmentManager(), "MyRecipeFragment");
+        } else {
+            new RestAPI(this, position, mImageDownloader).execute(SERVER_GET_URL, data);
         }
     }
 
-    public Bitmap getBitmapFromMemCache(String key) {
-        return mMemoryCache.get(key);
-    }*/
+    public RecipeAdapter getRecipeAdapter() {
+        return mRecipeAdapter;
+    }
+
+    public void notifyDataSetChanged() {
+        mRecipeAdapter.notifyDataSetChanged();
+    }
 
 }

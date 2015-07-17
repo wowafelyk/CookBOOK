@@ -40,7 +40,9 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeHold
 
     public RecipeAdapter(Context context) {
         super();
-        linkedList = new LinkedList<Recipe>();
+        if (linkedList == null) {
+            linkedList = new LinkedList<Recipe>();
+        }
         this.mContext = context;
     }
 
@@ -96,7 +98,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeHold
         //TODO: Change setting bitmap
         Downloader.setBitmapFromCache(holder.imgIcon, recipe, position, true);
         //Log.d(TEST, "Recipe =  " + recipe.hashCode() + " View = " + holder.imgIcon.hashCode());
-        holder.imgIcon.setImageBitmap(Downloader.getBitmapFromMemCache(recipe.getImgURL()));
+        //holder.imgIcon.setImageBitmap(Downloader.getBitmapFromMemCache(recipe.getImgURL()));
         holder.txtRank.setText("Rating = " + recipe.getSocialRank());
     }
 
@@ -109,7 +111,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeHold
         return new ArrayList<Recipe>(linkedList);
     }
 
-    public void alterItem(Integer position) {
+    public void alterItem() {
         // suppression exception when arrayAdapter was cleared and task still running
         try {
             this.notifyDataSetChanged();

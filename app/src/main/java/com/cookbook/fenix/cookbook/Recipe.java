@@ -16,7 +16,7 @@ public class Recipe implements Parcelable {
     private String publisher;
     private String[] ingredients;
     private String imgURL;
-    //private Bitmap bitmap;
+
 
     private final String TEST = "Recipe";
 
@@ -31,19 +31,9 @@ public class Recipe implements Parcelable {
         this.recipeID = recipeID;
         this.socialRank = socialRank;
         this.publisher = publisher;
-        this.ingredients = ingredients;
         this.imgURL = imgURL;
     }
 
-    /*
-        public Bitmap getBitmap() {
-            return bitmap;
-        }
-
-        public void setBitmap(Bitmap bitmap) {
-            this.bitmap = bitmap;
-        }
-    */
     public String getTitle() {
         return title;
     }
@@ -113,7 +103,6 @@ public class Recipe implements Parcelable {
         this.publisher = in.readString();
         this.ingredients = in.createStringArray();
         this.imgURL = in.readString();
-        //this.bitmap = in.readParcelable(Recipe.class.getClassLoader());
     }
 
     @Override
@@ -129,6 +118,5 @@ public class Recipe implements Parcelable {
         parcel.writeString(publisher);
         parcel.writeStringArray(ingredients);
         parcel.writeString(imgURL);
-        //parcel.writeParcelable(bitmap, flags);
     }
 }
