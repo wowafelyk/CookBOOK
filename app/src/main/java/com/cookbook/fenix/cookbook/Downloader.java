@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -35,7 +36,7 @@ public class Downloader extends Thread {
     private WeakReference<Activity> mActivityWeakReference;
     public static LinkedBlockingDeque<ImageDownloadTask> taskDeque = new LinkedBlockingDeque<ImageDownloadTask>();
     private static LruCache<String, Bitmap> sMemoryCache;
-    private RecipeAdapter recipeAdapter;
+    private WeakReference<RecipeAdapter> recipeAdapter;
     private boolean stopPool = false;
     private boolean stop = true;
     private ExecutorService executor;
@@ -70,27 +71,27 @@ public class Downloader extends Thread {
         executor = Executors.newFixedThreadPool(3);
 
         while (stop) {
+
             if (stopPool) {
                 executor.shutdownNow();
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                while (!executor.isTerminated()) {
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
                 executor = Executors.newFixedThreadPool(3);
-
                 stopPool(false);
             }
 
 
             if (taskDeque.size() >= 1) {
                 while (!stopPool && (poolDownloadTask())) {
-
                 }
 
             } else {
                     try {
-                        Log.d(TEST, "Current thread = sleep ");
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -124,8 +125,9 @@ public class Downloader extends Thread {
         }
 
         public void run() {
+            if (BuildConfig.DEBUG) Log.d(TEST, " size = " + taskDeque.size());
 
-            if (!existsBitmap(ltRecipe.getImgURL())) {
+            if (!existsBitmap(ltRecipe.getImgURL(), ltDownloadTask)) {
 
                 sMemoryCache.put(ltRecipe.getImgURL(), placeholder);
                 InputStream is = null;
@@ -156,10 +158,10 @@ public class Downloader extends Thread {
 
                 Activity a = mActivityWeakReference.get();
                 try {
-                    if (a != null && recipeAdapter != null) {
+                    if (a != null && recipeAdapter.get() != null) {
                         a.runOnUiThread(new Runnable() {
                             public void run() {
-                                recipeAdapter.alterItem(ltDownloadTask.getPointer());
+                                recipeAdapter.get().alterItem(ltDownloadTask.getPointer());
                             }
                         });
                     }
@@ -168,9 +170,7 @@ public class Downloader extends Thread {
                 }
             }
 
-            if (recipeAdapter == null)
-
-            {
+            if (recipeAdapter == null) {
                 try {
                     Thread.currentThread().sleep(1000);
                 } catch (InterruptedException e) {
@@ -179,13 +179,19 @@ public class Downloader extends Thread {
                 }
             }
 
-            final ImageView v = ltDownloadTask.getImageView();
-            if ((v != null) && (ltBmp != null)) {
-                v.post(new Runnable() {
+            Activity a = mActivityWeakReference.get();
+            if ((ltDownloadTask.getRecipeFragment() != null) && (ltBmp != null) && a != null) {
+                a.runOnUiThread(new Runnable() {
                     public void run() {
-                        v.setImageBitmap(ltBmp);
+                        try {
+                            ltDownloadTask.getRecipeFragment().setView(ltBmp);
+                        } catch (NullPointerException e) {
+                            Log.e(TAG, "SoftReference<RecipeFragment> return null ");
+                        }
+
                     }
                 });
+
             }
             ImageDownloadTask ltDownloadTask = null;
             Recipe ltRecipe = null;
@@ -193,9 +199,37 @@ public class Downloader extends Thread {
         }
 
 
-        private boolean existsBitmap(String key) {
+        private boolean existsBitmap(String key, ImageDownloadTask t) {
+
             if (getBitmapFromMemCache(key) == null) {
                 return false;
+            }
+
+            if (t.getRecipeFragment() != null) {
+                if (getBitmapFromMemCache(key).equals(placeholder)) {
+                    boolean run = true;
+                    while (run) {
+                        Bitmap b = getBitmapFromMemCache(key);
+                        if (b == null) {
+                            Downloader.addFirst(t);
+                        }
+                        if (b.equals(placeholder)) {
+                            try {
+                                Thread.currentThread().sleep(200);
+                            } catch (InterruptedException e) {
+                                Downloader.addFirst(t);
+                                Log.e(TAG, "Thread crash while waiting download image");
+                                e.printStackTrace();
+                            }
+
+                        } else {
+                            ltBmp = b;
+                            run = false;
+                        }
+                    }
+                    return true;
+                }
+                ltBmp = getBitmapFromMemCache(key);
             }
             return true;
         }
@@ -266,23 +300,24 @@ public class Downloader extends Thread {
         return sMemoryCache.get(key);
     }
 
-    public static void setBitmapFromCache(ImageView imageView, Recipe r, Integer position, boolean b) {
+    public static void setBitmapFromCache(ImageView imageView, Recipe r, Integer position, RecipeFragment f) {
         Bitmap bmp = sMemoryCache.get(r.getImgURL());
-        if ((bmp != null) && (b == false)) {
-            Log.d(TEST, "BMP1");
+
+        if ((bmp != null) && (f != null)) {
+
             if (bmp.equals(placeholder)) {
-                Log.d(TEST, "BMP2");
+
                 sMemoryCache.remove(r.getImgURL());
-                addFirst(new ImageDownloadTask(r, position, imageView));
+                addFirst(new ImageDownloadTask(r, position, f));
             } else imageView.setImageBitmap(bmp);
         } else if (bmp != null) {
             imageView.setImageBitmap(bmp);
-        } else if ((bmp == null) && (b == true)) {
+        } else if ((bmp == null) && (f == null)) {
             imageView.setImageBitmap(placeholder);
-            addLast(new ImageDownloadTask(r, position, imageView));
-        } else if ((bmp == null) && (b == false)) {
+            addLast(new ImageDownloadTask(r, position, null));
+        } else if ((bmp == null) && (f != null)) {
             imageView.setImageBitmap(placeholder);
-            addFirst(new ImageDownloadTask(r, position, imageView));
+            addFirst(new ImageDownloadTask(r, position, f));
         }
     }
 
@@ -321,11 +356,11 @@ public class Downloader extends Thread {
         mActivityWeakReference = new WeakReference<Activity>(activity);
     }
 
-    public void setRecipeAdapter(RecipeAdapter adapter) {
-        this.recipeAdapter = adapter;
+    public void setWeakRecipeAdapter(RecipeAdapter adapter) {
+        this.recipeAdapter = new WeakReference<RecipeAdapter>(adapter);
     }
 
-    public RecipeAdapter getRecipeAdapter() {
+    public WeakReference<RecipeAdapter> getWeakRecipeAdapter() {
         return recipeAdapter;
     }
 
@@ -338,15 +373,14 @@ public class Downloader extends Thread {
 class ImageDownloadTask {
     private Recipe recipe;
     private Integer pointer;
-    private WeakReference<ImageView> mWeakImageView;
+    private SoftReference<RecipeFragment> mWeakRecipeFragment;
     public static final String TEST = "ImageDownloadTask";
-    //private RecipeFragment recipeFragment;
 
-    public ImageDownloadTask(Recipe r, Integer pointer, ImageView v) {
+
+    public ImageDownloadTask(Recipe r, Integer pointer, RecipeFragment v) {
         this.pointer = pointer;
         this.recipe = r;
-        this.mWeakImageView = new WeakReference<ImageView>(v);
-        //Log.d(TEST, "Recipe0 =  " + recipe.hashCode() + " View = " + mWeakImageView.hashCode());
+        this.mWeakRecipeFragment = new SoftReference<RecipeFragment>(v);
     }
 
     public Recipe getRecipe() {
@@ -357,12 +391,12 @@ class ImageDownloadTask {
         this.recipe = recipe;
     }
 
-    public ImageView getImageView() {
-        return mWeakImageView.get();
+    public RecipeFragment getRecipeFragment() {
+        return mWeakRecipeFragment.get();
     }
 
-    public void setImageView(ImageView ImageView) {
-        this.mWeakImageView = new WeakReference<ImageView>(ImageView);
+    public void setRecipeFragment(RecipeFragment recipeFragment) {
+        this.mWeakRecipeFragment = new SoftReference<RecipeFragment>(recipeFragment);
     }
 
     public Integer getPointer() {

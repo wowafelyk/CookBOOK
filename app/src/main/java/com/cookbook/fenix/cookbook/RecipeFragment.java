@@ -3,6 +3,7 @@ package com.cookbook.fenix.cookbook;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.DialogFragment;
@@ -57,7 +58,7 @@ public class RecipeFragment extends DialogFragment {
         publisher.setText(recipe.getPublisher());
 
 
-        Downloader.setBitmapFromCache(image, recipe, null, false);
+        Downloader.setBitmapFromCache(image, recipe, null, this);
         Log.d(TEST, "Recipe =  " + recipe.hashCode() + " View = " + image.hashCode());
 
         ratingBar.setRating(Float.parseFloat(recipe.getSocialRank()));
@@ -70,6 +71,10 @@ public class RecipeFragment extends DialogFragment {
         }
         ingredients.setText(str);
         return v;
+    }
+
+    public synchronized void setView(Bitmap b) {
+        image.setImageBitmap(b);
     }
 
     public void onDismiss(DialogInterface dialog) {

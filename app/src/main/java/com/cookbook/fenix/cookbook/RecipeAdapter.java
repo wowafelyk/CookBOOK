@@ -95,7 +95,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeHold
         holder.txtTitle.setText(recipe.getTitle());
         holder.txtPublisher.setText(recipe.getPublisher());
 
-        Downloader.setBitmapFromCache(holder.imgIcon, recipe, position, true);
+        Downloader.setBitmapFromCache(holder.imgIcon, recipe, position, null);
         holder.txtRank.setText("Rating = " + recipe.getSocialRank());
     }
 
@@ -111,9 +111,8 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeHold
     public void alterItem(Integer pointer) {
         // suppression exception when arrayAdapter was cleared and task still running
         try {
-            if (pointer != null) {
-                this.notifyItemChanged(pointer);
-            } else this.notifyDataSetChanged();
+            if (pointer != null) this.notifyItemChanged(pointer);
+            else this.notifyDataSetChanged();
         } catch (IndexOutOfBoundsException e) {
             e.printStackTrace();
         }

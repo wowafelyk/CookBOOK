@@ -1,7 +1,6 @@
 package com.cookbook.fenix.cookbook;
 
 import android.app.Activity;
-
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
@@ -136,11 +135,11 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
     @Override
     protected void onPostExecute(Recipe[] result) {
 
-        RecipeAdapter mRecipeAdapter;
+        RecipeAdapter mRecipeAdapter = mImageDownloader.getWeakRecipeAdapter().get();
         Activity activity = activityWeakReference.get();
 
-        if (activity != null) {
-            mRecipeAdapter = mImageDownloader.getRecipeAdapter();
+        if (activity != null && mRecipeAdapter != null) {
+
         } else {
             try {
                 Thread.sleep(1000);
@@ -149,7 +148,7 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
             }
             activityWeakReference = mImageDownloader.getLink();
             activity = activityWeakReference.get();
-            mRecipeAdapter = mImageDownloader.getRecipeAdapter();
+            mRecipeAdapter = mImageDownloader.getWeakRecipeAdapter().get();
         }
 
 
@@ -182,11 +181,9 @@ public class RestAPI extends AsyncTask<String, String, Recipe[]> {
 
             } else {
                 try {
-                    RecipeFragment rf;
                     Recipe r = result[0];
                     RecipeAdapter.linkedList.set(itemPosition, r);
-                    rf = new RecipeFragment().newInstance(r);
-                    rf.show(((CookBOOK) activity).getSupportFragmentManager(), "MyRecipeFragment");
+                    ((CookBOOK) activity).showDialog(r);
                 } catch (IndexOutOfBoundsException e) {
                     //RecipeAdapter.linkedList was cleared because user change his choice
                     //and want run search instead watch detailed element

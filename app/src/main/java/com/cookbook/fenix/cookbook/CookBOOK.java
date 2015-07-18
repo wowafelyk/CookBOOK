@@ -1,6 +1,7 @@
 package com.cookbook.fenix.cookbook;
 
 
+import android.support.v4.app.DialogFragment;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
@@ -41,6 +42,7 @@ public class CookBOOK extends ActionBarActivity {
     private ArrayList<Recipe> mRecipeList;
     private RecyclerView mRecyclerView;
     private GridLayoutManager mGridLayoutManager;
+    private DialogFragment mFragment;
     private boolean sort;
     private int column;
     private String query;
@@ -49,6 +51,7 @@ public class CookBOOK extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_cook_book);
         if (BuildConfig.DEBUG) Log.d(TEST, " Thread num = " + Thread.currentThread().hashCode());
 
@@ -61,13 +64,11 @@ public class CookBOOK extends ActionBarActivity {
         mImageDownloader = (Downloader) getLastCustomNonConfigurationInstance();
         if (mImageDownloader == null) {
             mImageDownloader = new Downloader(this);
-            mImageDownloader.setRecipeAdapter(mRecipeAdapter);
+            mImageDownloader.setWeakRecipeAdapter(mRecipeAdapter);
             mImageDownloader.start();
-            Log.d(TEST, "mRecipeAdapter " + mRecipeAdapter.hashCode());
         } else {
-            Log.d(TEST, "mImageDownloader = " + mImageDownloader.hashCode());
             mImageDownloader.setLink(this);
-            mImageDownloader.setRecipeAdapter(mRecipeAdapter);
+            mImageDownloader.setWeakRecipeAdapter(mRecipeAdapter);
         }
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerView);
         mGridLayoutManager = new PreCachingLayoutManager(this, column);
@@ -128,14 +129,12 @@ public class CookBOOK extends ActionBarActivity {
 
     @Override
     public Object onRetainCustomNonConfigurationInstance() {
-        Log.d(TEST, "mImageDownloader = " + mImageDownloader.hashCode());
         return mImageDownloader;
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        Log.d(TEST, "life  onRestore");
         //TODO:Change RecipeAdapter.likedList to mLinkedList
         mRecipeList = savedInstanceState.getParcelableArrayList(BUNDLE_RECIPE_ARRAY);
         query = savedInstanceState.getString("query");
@@ -144,14 +143,12 @@ public class CookBOOK extends ActionBarActivity {
             RecipeAdapter.linkedList.addAll(mRecipeList);
         }
         mRecyclerView.setAdapter(mRecipeAdapter);
-        mImageDownloader.setRecipeAdapter(mRecipeAdapter);
+        mImageDownloader.setWeakRecipeAdapter(mRecipeAdapter);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        Log.d(TEST, "life  onSave");
-        mImageDownloader.setRecipeAdapter(null);
         outState.putString("query", query);
         if (mRecipeAdapter.getItemCount() != 0) {
             mRecipeList = mRecipeAdapter.getData();
@@ -180,10 +177,12 @@ public class CookBOOK extends ActionBarActivity {
             sort = prefs.getBoolean("TOP Rated", true);
             String s = sort ? "r" : "t";
             search(query, s, page.toString());
+            return true;
         }
         if (id == R.id.action_settings) {
-            SettingsFragment sf = new SettingsFragment().newInstance(mGridLayoutManager);
-            sf.show(getSupportFragmentManager(), "MySF");
+            mFragment = new SettingsFragment().newInstance(mGridLayoutManager);
+            mFragment.show(getSupportFragmentManager(), "MySF");
+            getSupportFragmentManager().executePendingTransactions();
             return true;
         }
 
@@ -205,15 +204,14 @@ public class CookBOOK extends ActionBarActivity {
         new RestAPI(this, mImageDownloader).execute(SERVER_SERCH_URL, data);
     }
 
-    private void
-    get(String id, Integer position) {
+    private void get(String id, Integer position) {
         String data = "&key=" + API_KEY;
         data += "&rId=" + id;
         Toast.makeText(this, " Загрузка даних зачекайте", Toast.LENGTH_SHORT).show();
-        //if we have
+
         if (RecipeAdapter.linkedList.get(position).getIngredients() != null) {
-            RecipeFragment rf = new RecipeFragment().newInstance(RecipeAdapter.linkedList.get(position));
-            rf.show(getSupportFragmentManager(), "MyRecipeFragment");
+            mFragment = new RecipeFragment().newInstance(RecipeAdapter.linkedList.get(position));
+            mFragment.show(getSupportFragmentManager(), "MyRecipeFragment");
         } else {
             new RestAPI(this, position, mImageDownloader).execute(SERVER_GET_URL, data);
         }
@@ -221,6 +219,17 @@ public class CookBOOK extends ActionBarActivity {
 
     public void notifyDataSetChanged() {
         mRecipeAdapter.notifyDataSetChanged();
+    }
+
+    public synchronized void showDialog(Recipe r) {
+
+        mFragment = (DialogFragment) getSupportFragmentManager().findFragmentByTag("MyRecipeFragment");
+        if (mFragment != null) {
+            return;
+        }
+        mFragment = new RecipeFragment().newInstance(r);
+        mFragment.show(getSupportFragmentManager(), "MyRecipeFragment");
+        getSupportFragmentManager().executePendingTransactions();
     }
 
 }
